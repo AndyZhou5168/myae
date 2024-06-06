@@ -25,12 +25,14 @@ python3 -m pip install psycopg2 psycopg2-binary
 sudo apt install -y busybox-static bash-static fakeroot dmsetup kpartx netcat-openbsd nmap python3-psycopg2 snmp uml-utilities util-linux vlan
 
 # for binwalk
-wget https://github.com/ReFirmLabs/binwalk/archive/refs/tags/v2.3.4.tar.gz && \
-  tar -xf v2.3.4.tar.gz && \
-  cd binwalk-2.3.4 && \
-  sed -i 's/^install_ubireader//g' deps.sh && \
-  echo y | ./deps.sh && \
-  sudo python3 setup.py install
+if ! test -e "./v2.3.4.tar.gz"; then
+    wget https://github.com/ReFirmLabs/binwalk/archive/refs/tags/v2.3.4.tar.gz
+fi
+tar -xf v2.3.4.tar.gz && \
+cd binwalk-2.3.4 && \
+sed -i 's/^install_ubireader//g' deps.sh && \
+echo y | ./deps.sh && \
+sudo python3 setup.py install
 sudo apt install -y mtd-utils gzip bzip2 tar arj lhasa p7zip p7zip-full cabextract fusecram cramfsswap squashfs-tools sleuthkit default-jdk cpio lzop lzma srecord zlib1g-dev liblzma-dev liblzo2-dev unzip
 
 cd - # back to root of project
