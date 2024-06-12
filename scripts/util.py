@@ -15,28 +15,23 @@ def io_md5(target):
             buf = ifp.read(blocksize)
         return hasher.hexdigest()
 
+
 def query_(query, psql_ip):
     try:
-        dbh = psycopg2.connect(database="firmware",
-                               user="firmadyne",
-                               password="firmadyne",
-                               host=psql_ip)
+        dbh = psycopg2.connect(database="firmware", user="firmadyne", password="firmadyne", host=psql_ip)
         cur = dbh.cursor()
         cur.execute(query)
         return cur.fetchone()
-
     except:
         return None
+
 
 def get_iid(infile, psql_ip):
     md5 = io_md5(infile)
     q = "SELECT id FROM image WHERE hash = '%s'" % md5
     image_id = query_(q, psql_ip)
+    return image_id[0] if image_id else ""
 
-    if image_id:
-        return image_id[0]
-    else:
-        return ""
 
 def get_brand(infile, psql_ip):
     md5 = io_md5(infile)
@@ -46,23 +41,19 @@ def get_brand(infile, psql_ip):
     if brand_id:
         q = "SELECT name FROM brand WHERE id = '%s'" % brand_id
         brand = query_(q, psql_ip)
-        if brand:
-            return brand[0]
-        else:
-            return ""
+        return brand[0] if brand else ""
     else:
         return ""
 
+
 def check_connection(psql_ip):
     try:
-        dbh = psycopg2.connect(database="firmware",
-                               user="firmadyne",
-                               password="firmadyne",
-                               host=psql_ip)
+        dbh = psycopg2.connect(database="firmware", user="firmadyne", password="firmadyne", host=psql_ip)
         dbh.close()
         return 0
     except:
         return 1
+
 
 # command line
 if __name__ == '__main__':

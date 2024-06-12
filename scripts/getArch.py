@@ -54,10 +54,7 @@ for info in infos:
     if arch and endian:
         print(arch + endian)
         subprocess.call(["rm", "-rf", "/tmp/" + iid])
-        dbh = psycopg2.connect(database="firmware",
-                               user="firmadyne",
-                               password="firmadyne",
-                               host=psql_ip)
+        dbh = psycopg2.connect(database="firmware", user="firmadyne", password="firmadyne", host=psql_ip)
         cur = dbh.cursor()
         query = """UPDATE image SET arch = '%s' WHERE id = %s;"""
         cur.execute(query % (arch+endian, iid))

@@ -15,9 +15,17 @@ if [ $# -ne 3 ]; then
     print_usage ${0}
     exit 1
 fi
-
 set -e
 set -u
+set +x
+
+echo -e "需要进入VERBOSE模式吗【(Y)es / N(o)】？"
+typeset -u MYAE_VERBOSE
+read -t 7 -p "您的输入：" MYAE_VERBOSE
+if (! echo $MYAE_VERBOSE|egrep -sqi '^Y$|^YES$'); then
+    set -x
+fi
+
 
 if [ -e ./firmae.config ]; then
     source ./firmae.config
@@ -27,6 +35,9 @@ else
     echo "Error: Could not find 'firmae.config'!"
     exit 1
 fi
+
+MYAE_LOG_DIR="/opt/myae-log"
+mkdir -p ${MYAE_LOG_DIR}
 
 function get_option()
 {
@@ -48,24 +59,24 @@ function get_option()
 
 function get_brand()
 {
-  INFILE=${1}
-  BRAND=${2}
-  if [ ${BRAND} = "auto" ]; then
-    echo `./scripts/util.py get_brand ${INFILE} ${PSQL_IP}`
-  else
-    echo ${2}
-  fi
+    INFILE=${1}
+    BRAND=${2}
+    if [ ${BRAND} = "auto" ]; then
+        echo `./scripts/util.py get_brand ${INFILE} ${PSQL_IP}`
+    else
+        echo ${2}
+    fi
 }
 
 OPTION=`get_option ${1}`
 if [ ${OPTION} == "none" ]; then
-  print_usage ${0}
-  exit 1
+    print_usage ${0}
+    exit 1
 fi
 
 if (! id | egrep -sqi "root"); then
-  echo -e "[\033[31m-\033[0m] This script must run with 'root' privilege"
-  exit 1
+    echo -e "[\033[31m-\033[0m] This script must run with 'root' privilege"
+    exit 1
 fi
 
 BRAND=${2}
@@ -74,7 +85,7 @@ IID=-1
 
 function run_emulation()
 {
-    echo "[*] ${1} emulation start!!!"
+    echo "固件【${1}】模拟开始..."
     INFILE=${1}
     BRAND=`get_brand ${INFILE} ${BRAND}`
     FILENAME=`basename ${INFILE%.*}`
@@ -83,15 +94,15 @@ function run_emulation()
     IP=''
 
     if [ "${BRAND}" = "auto" ]; then
-      echo -e "[\033[31m-\033[0m] Invalid brand ${INFILE}"
-      return
+        echo -e "[\033[31m-\033[0m] Invalid brand ${INFILE}"
+        return
     fi
 
     if [ -n "${FIRMAE_DOCKER-}" ]; then
-      if ( ! ./scripts/util.py check_connection _ $PSQL_IP ); then
-        echo -e "[\033[31m-\033[0m] docker container failed to connect to the hosts' postgresql!"
-        return
-      fi
+        if ( ! ./scripts/util.py check_connection _ $PSQL_IP ); then
+            echo -e "[\033[31m-\033[0m] docker container failed to connect to the hosts' postgresql!"
+            return
+        fi
     fi
 
     # Omit the argument '-b' when $BRAND is empty.
@@ -102,11 +113,11 @@ function run_emulation()
     # ================================
     t_start="$(date -u +%s.%N)"
 
-    # If the brand is not specified in the argument, it will be inferred 
-    # automatically from the path of the image file.
+    # If the brand is not specified in the argument, 
+    # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nk $INFILE images 2>&1 >/dev/null
+        -nk $INFILE images 2>&1 > "$MYAE_LOG_DIR/extractor.log"
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
@@ -121,9 +132,10 @@ function run_emulation()
     # automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nf $INFILE images 2>&1 >/dev/null
+        -nf $INFILE images 2>&1 >> "$MYAE_LOG_DIR/extractor.log"
 
     WORK_DIR=`get_scratch ${IID}`
+    echo "固件工作目录：【$WORK_DIR】"
     mkdir -p ${WORK_DIR}
     chmod a+rwx "${WORK_DIR}"
     chown -R "${USER}" "${WORK_DIR}"
@@ -159,7 +171,7 @@ function run_emulation()
     echo "${ARCH}" > "${WORK_DIR}/architecture"
 
     if [ -e ./images/${IID}.kernel ]; then
-      ./scripts/inferKernel.py ${IID}
+        ./scripts/inferKernel.py ${IID}
     fi
 
     if [ ! "${ARCH}" ]; then
@@ -183,15 +195,13 @@ function run_emulation()
         # make qemu image
         # ================================
         t_start="$(date -u +%s.%N)"
-        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP \
-            2>&1 > ${WORK_DIR}/tar2db.log
+        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > ${MYAE_LOG_DIR}/tar2db.log
         t_end="$(date -u +%s.%N)"
         time_tar="$(bc <<<"$t_end-$t_start")"
         echo $time_tar > ${WORK_DIR}/time_tar
 
         t_start="$(date -u +%s.%N)"
-        ./scripts/makeImage.sh $IID $ARCH $FILENAME \
-            2>&1 > ${WORK_DIR}/makeImage.log
+        ./scripts/makeImage.sh $IID $ARCH $FILENAME 2>&1 > ${MYAE_LOG_DIR}/makeImage.log
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
@@ -204,8 +214,7 @@ function run_emulation()
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} \
-          &> ${WORK_DIR}/makeNetwork.log
+            ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} & > ${MYAE_LOG_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true
@@ -253,7 +262,7 @@ function run_emulation()
             cd -
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> /dev/null
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 1>&2 2 >> "$MYAE_LOG_DIR/kill-qemu.log"
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Web unreachable"
@@ -276,7 +285,7 @@ function run_emulation()
             ./debug.py ${IID}
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> /dev/null | true
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 1>&2 2 >> "$MYAE_LOG_DIR/kill-qemu.log" | true
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Network unreachable"

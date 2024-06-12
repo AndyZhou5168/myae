@@ -13,6 +13,7 @@ if version_info >= (3, 13):
 else:
     import telnetlib
 
+
 class firmae_helper():
     def __init__(self, iid):
         self.iid = int(iid)
@@ -104,6 +105,7 @@ class firmae_helper():
 def signal_handler(sig, frame):
     return
 
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -168,4 +170,3 @@ if __name__ == '__main__':
         elif select == 6:
             break
         print('\n')
-

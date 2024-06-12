@@ -737,13 +737,8 @@ class ExtractionItem(object):
 def psql_check(psql_ip):
     try:
         import psycopg2
-        psycopg2.connect(database="firmware",
-                         user="firmadyne",
-                         password="firmadyne",
-                         host=psql_ip)
-
+        psycopg2.connect(database="firmware", user="firmadyne", password="firmadyne", host=psql_ip)
         return True
-
     except:
         return False
 

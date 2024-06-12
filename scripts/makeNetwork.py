@@ -82,7 +82,13 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 echo -n "Starting emulation of firmware... "
 %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
-    %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
+    %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} \\
+    console=ttyS0 \\
+    nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel \\
+    print-fatal-signals=1 \\
+    FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} \\
+    FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} \\
+    ${QEMU_DEBUG}" \\
     -serial file:${WORK_DIR}/qemu.final.serial.log \\
     -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
     -monitor unix:/tmp/qemu.${IID},server,nowait \\
@@ -105,10 +111,7 @@ def umountImage(targetDir, loopFile):
     subprocess.check_output(['bash', '-c', 'source firmae.config && del_partition %s' % loopFile.rsplit('p', 1)[0]])
 
 def checkVariable(key):
-    if os.environ[key] == 'true':
-        return True
-    else:
-        return False
+    return True if os.environ[key] == 'true' else False
 
 def stripTimestamps(data):
     lines = data.split(b"\n")
@@ -226,10 +229,7 @@ def isDhcpIp(ip):
     return False
 
 def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
-    if arch == "arm":
-        device = "virtio-net-device"
-    else:
-        device = "e1000"
+    device = "virtio-net-device" if arch == "arm" else "e1000"
 
     if not n:
         return "-device %(DEVICE)s,netdev=net%(I)i -netdev socket,id=net%(I)i,listen=:200%(I)i" % {'DEVICE': device, 'I': i}
@@ -418,6 +418,7 @@ def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, 
                               'QEMU_NETWORK' : qemuNetworkConfig(arch, network, isUserNetwork, ports),
                               'QEMU_ENV_VARS' : qemuEnvVars}
 
+
 def getNetworkList(data, ifacesWithIps, macChanges):
     global debug
     networkList = []
@@ -458,6 +459,7 @@ def getNetworkList(data, ifacesWithIps, macChanges):
                 if debug:
                     print("duplicate ip address for interface: ", n)
         return pruned_network
+
 
 def readWithException(filePath):
     fileData = ''
@@ -526,11 +528,11 @@ def inferNetwork(iid, arch, endianness, init):
     print("Running firmware %d: terminating after %d secs..." % (iid, TIMEOUT))
 
     cmd = "timeout --preserve-status --signal SIGINT {0} ".format(TIMEOUT)
-    cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(SCRIPTDIR,
-                                                    arch + endianness,
-                                                    iid,
-                                                    qemuInitValue)
+    cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(
+        SCRIPTDIR, arch + endianness, iid, qemuInitValue
+    )
     cmd += " 2>&1 > /dev/null"
+    print("执行的命令=> {}".format(cmd))
     os.system(cmd)
 
     loopFile = mountImage(targetDir)
@@ -551,6 +553,7 @@ def inferNetwork(iid, arch, endianness, init):
 
     networkList = getNetworkList(data, ifacesWithIps, macChanges)
     return qemuInitValue, networkList, targetFile, targetData, ports
+
 
 def checkNetwork(networkList):
     filterNetworkList = []
@@ -617,7 +620,6 @@ def checkNetwork(networkList):
                         dev = devList.pop(0)
                         filterNetworkList.append(('192.168.0.1', dev, vlan, mac, brif))
                 result = "bridgereload"
-
         else:
             print("[*] no network interface: bring up default network")
             filterNetworkList.append(('192.168.0.1', 'eth0', None, None, "br0"))
@@ -626,6 +628,7 @@ def checkNetwork(networkList):
         filterNetworkList = networkList
 
     return filterNetworkList, result # (network_type)
+
 
 def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
     success = False
@@ -664,10 +667,7 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
 
             isUserNetwork = any(isDhcpIp(ip) for ip in ips)
             with open(SCRATCHDIR + "/" + str(iid) + "/isDhcp", "w") as out:
-                if isUserNetwork:
-                    out.write("true")
-                else:
-                    out.write("false")
+                out.write("true" if isUserNetwork else "false")
 
             qemuCommandLine = qemuCmd(iid,
                                       filterNetworkList,
@@ -700,6 +700,7 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
 
     return success
 
+
 def archEnd(value):
     arch = None
     end = None
@@ -715,6 +716,7 @@ def archEnd(value):
         end = "eb"
     return (arch, end)
 
+
 def getWorkDir():
     if os.path.isfile("./firmae.config"):
         return os.getcwd()
@@ -723,6 +725,7 @@ def getWorkDir():
         return path[:path.rfind('/')]
     else:
         return None
+
 
 def main():
     makeQemuCmd = False
@@ -760,6 +763,7 @@ def main():
     if debug:
         print("processing %i" % iid)
     process(iid, arch, endianness, makeQemuCmd, outfile)
+
 
 if __name__ == "__main__":
     main()

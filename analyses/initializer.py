@@ -17,6 +17,7 @@ netgear_pattern = re.compile(r"No[,.]( I want to).+(configur)")
 def Initialize():
     os.environ['PATH'] = os.getcwd() + ':' + os.environ['PATH']
 
+
 class Initializer:
     brand = None
     auth = None
@@ -113,6 +114,7 @@ class Initializer:
             self.driver.find_element_by_xpath("//*[@type='button']").click()
         alert = self.driver.switch_to_alert()
         alert.accept()
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

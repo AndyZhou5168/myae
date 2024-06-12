@@ -38,7 +38,7 @@ DEVICE=`get_device`
 echo "----Making image directory----"
 if [ ! -e "${IMAGE_DIR}" ]
 then
-        mkdir "${IMAGE_DIR}"
+    mkdir "${IMAGE_DIR}"
 fi
 
 echo "----Mounting----"

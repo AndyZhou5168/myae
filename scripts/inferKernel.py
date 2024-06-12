@@ -25,10 +25,13 @@ if __name__ == "__main__":
     # execute only if run as a script
     IID = sys.argv[1]
     kernelPath = './images/' + IID + '.kernel'
-    os.system("strings {} | grep \"Linux version\" > {}".format(kernelPath,
-                                                                "scratch/" + IID + "/kernelVersion"))
 
-    os.system("strings {} | grep \"init=/\" | sed -e 's/^\"//' -e 's/\"$//' > {}".format(kernelPath,
-                                                                "scratch/" + IID + "/kernelCmd"))
+    tmpstr = "strings {} | grep \"Linux version\" > {}".format(kernelPath, "scratch/"+IID+"/kernelVersion")
+    print("执行的命令=> {}".format(tmpstr))
+    os.system(tmpstr)
+
+    tmpstr = "strings {} | grep \"init=/\" | sed -e 's/^\"//' -e 's/\"$//' > {}".format(kernelPath, "scratch/"+IID+"/kernelCmd")
+    print("执行的命令=> {}".format(tmpstr))
+    os.system(tmpstr)
 
     ParseCmd()

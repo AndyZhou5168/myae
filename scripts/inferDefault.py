@@ -27,11 +27,13 @@ def GetKeyList(IID):
 def GetDefaultFiles(keyList):
     default_list = []
     for dir_name, dir_list, file_list in os.walk('./scratch/{}/image'.format(IID)):
-        if dir_name.find('/firmadyne') != -1: continue
+        if dir_name.find('/firmadyne') != -1:
+            continue
 
         for file_name in file_list:
             count = 0
-            if not os.path.isfile(dir_name + '/' + file_name): continue
+            if not os.path.isfile(dir_name + '/' + file_name):
+                continue
             data = open(dir_name + '/' + file_name, 'rb').read()
             for key in keyList:
                 if data.find(key) != -1:
@@ -59,6 +61,7 @@ def Log(default_list):
                 if fileType.find('symbolic') == -1:
                     f.write('{} {} {}\n'.format(path, j, fileType))
         os.system('cp ./scratch/{}/nvram_files ./scratch/{}/image/firmadyne/'.format(IID, IID))
+
 
 if __name__ == "__main__":
     # execute only if run as a script

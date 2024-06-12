@@ -30,14 +30,14 @@ echo ""
 
 IPS=()
 if (egrep -sq true ${WORK_DIR}/isDhcp); then
-  IPS+=("127.0.0.1")
-  echo true > ${WORK_DIR}/ping
+    IPS+=("127.0.0.1")
+    echo true > ${WORK_DIR}/ping
 else
-  IP_NUM=`cat ${WORK_DIR}/ip_num`
-  for (( IDX=0; IDX<${IP_NUM}; IDX++ ))
-  do
-    IPS+=(`cat ${WORK_DIR}/ip.${IDX}`)
-  done
+    IP_NUM=`cat ${WORK_DIR}/ip_num`
+    for (( IDX=0; IDX<${IP_NUM}; IDX++ ))
+    do
+        IPS+=(`cat ${WORK_DIR}/ip.${IDX}`)
+    done
 fi
 
 echo -e "[*] Waiting web service... from ${IPS[@]}"

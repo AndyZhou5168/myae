@@ -51,9 +51,7 @@ class docker_helper:
                 -v {1}:/work/firmwares \\
                 --privileged=true \\
                 --name {2} \\
-                fcore""".format(self.firmae_root,
-                                firmware_root,
-                                docker_name)
+                fcore""".format(self.firmae_root, firmware_root, docker_name)
 
         sp.check_output(cmd, shell=True)
         logging.info("[*] {} emulation start!".format(docker_name))
@@ -62,9 +60,7 @@ class docker_helper:
         docker_mode = "-it" if mode == "-d" else "-id"
         cmd = "docker exec {0} \"{1}\" ".format(docker_mode, docker_name)
         cmd += "bash -c \"cd /work/FirmAE && "
-        cmd += "./run.sh {0} {1} /work/firmwares/{2} ".format(mode,
-                                                              brand,
-                                                              firmware)
+        cmd += "./run.sh {0} {1} /work/firmwares/{2} ".format(mode, brand, firmware)
         if mode == "-d":
             cmd += "\""
         else:
