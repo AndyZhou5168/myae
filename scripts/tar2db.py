@@ -26,7 +26,7 @@ def getFileHashes(infile):
 def getOids(objs, cur):
     # hashes ... all the hashes in the tar file
     hashes = [x[1] for x in objs]
-    hashes_str = ",".join(["""'%s'""" % x for x in hashes])
+    hashes_str = ",".join(["""'%s'""" %x for x in hashes])
     query = """SELECT id,hash FROM object WHERE hash IN (%s)"""
     cur.execute(query % hashes_str)
     res = [(int(x), y) for (x, y) in cur.fetchall()]
@@ -58,14 +58,22 @@ def insertObjectToImage(iid, files2oids, links, cur):
     query = """INSERT INTO object_to_image (iid, oid, filename, regular_file, uid, gid, permissions) VALUES (%(iid)s, %(oid)s, %(filename)s, %(regular_file)s, %(uid)s, %(gid)s, %(mode)s)"""
 
     try:
-        cur.executemany(query, [{'iid': iid, 'oid' : x[1], 'filename' : x[0][0],
-                             'regular_file' : True, 'uid' : x[0][1],
-                             'gid' : x[0][2], 'mode' : x[0][3]} \
-                            for x in files2oids])
-        cur.executemany(query, [{'iid': iid, 'oid' : 1, 'filename' : x[0],
-                             'regular_file' : False, 'uid' : None,
-                             'gid' : None, 'mode' : None} \
-                            for x in links])
+        cur.executemany(query, [{
+            'iid'           : iid,
+            'oid'           : x[1],
+            'filename'      : x[0][0],
+            'regular_file'  : True,
+            'uid'           : x[0][1],
+            'gid'           : x[0][2],
+            'mode'          : x[0][3]} for x in files2oids])
+        cur.executemany(query, [{
+            'iid'           : iid,
+            'oid'           : 1,
+            'filename'      : x[0],
+            'regular_file'  : False, 
+            'uid'           : None,
+            'gid'           : None,
+            'mode'          : None} for x in links])
     except:
         return
 
@@ -76,18 +84,12 @@ def process(iid, infile):
     cur = dbh.cursor()
 
     (files, links) = getFileHashes(infile)
-
     oids = getOids(files, cur)
-
-    fdict = dict([(h, (filename, uid, gid, mode)) \
-            for (filename, h, uid, gid, mode) in files])
-
+    fdict = dict([(h, (filename, uid, gid, mode)) for (filename, h, uid, gid, mode) in files])
     file2oid = [(fdict[h], oid) for (h, oid) in oids.items()]
 
     insertObjectToImage(iid, file2oid, links, cur)
-
     dbh.commit()
-
     dbh.close()
 
 

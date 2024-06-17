@@ -743,32 +743,23 @@ def psql_check(psql_ip):
         return False
 
 def main():
-    parser = argparse.ArgumentParser(description="Extracts filesystem and \
-        kernel from Linux-based firmware images")
-    parser.add_argument("input", action="store", help="Input file or directory")
-    parser.add_argument("output", action="store", nargs="?", default="images",
-                        help="Output directory for extracted firmware")
-    parser.add_argument("-sql ", dest="sql", action="store", default=None,
-                        help="Hostname of SQL server")
-    parser.add_argument("-nf", dest="rootfs", action="store_false",
-                        default=True, help="Disable extraction of root \
-                        filesystem (may decrease extraction time)")
-    parser.add_argument("-nk", dest="kernel", action="store_false",
-                        default=True, help="Disable extraction of kernel \
-                        (may decrease extraction time)")
-    parser.add_argument("-np", dest="parallel", action="store_false",
-                        default=True, help="Disable parallel operation \
-                        (may increase extraction time)")
-    parser.add_argument("-b", dest="brand", action="store", default=None,
-                        help="Brand of the firmware image")
-    parser.add_argument("-d", dest="debug", action="store_true", default=False,
-                        help="Print debug information")
+    parser = argparse.ArgumentParser(description="Extracts filesystem and kernel from Linux-based firmware images")
+
+    parser.add_argument("input", action="store",help="Input file or directory")
+    parser.add_argument("output", action="store", nargs="?", default="images",help="Output directory for extracted firmware")
+    parser.add_argument("-sql ", dest="sql", action="store", default=None,help="Hostname of SQL server")
+    parser.add_argument("-nf", dest="rootfs", action="store_false", default=True, help="Disable extraction of root filesystem (may decrease extraction time)")
+    parser.add_argument("-nk", dest="kernel", action="store_false", default=True, help="Disable extraction of kernel (may decrease extraction time)")
+    parser.add_argument("-np", dest="parallel", action="store_false", default=True, help="Disable parallel operation (may increase extraction time)")
+    parser.add_argument("-b", dest="brand", action="store", default=None, help="Brand of the firmware image")
+    parser.add_argument("-d", dest="debug", action="store_true", default=False, help="Print debug information")
+
     result = parser.parse_args()
+    print("\n提取过程前参数信息：{}\n".format(result))
 
     if psql_check(result.sql):
-        extract = Extractor(result.input, result.output, result.rootfs,
-                            result.kernel, result.parallel, result.sql,
-                            result.brand, result.debug)
+        extract = Extractor(result.input, result.output, result.rootfs, result.kernel,
+                            result.parallel, result.sql, result.brand, result.debug)
         extract.extract()
 
 if __name__ == "__main__":

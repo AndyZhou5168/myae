@@ -1,15 +1,24 @@
 #!/bin/bash
+clear
 
 function print_usage()
 {
     echo "Usage: ${0} [mode]... [brand] [firmware|firmware_directory]"
     echo "mode: use one option at once"
-    echo "      -r, --run     : run mode         - run emulation (no quit)"
-    echo "      -c, --check   : check mode       - check network reachable and web access (quit)"
-    echo "      -a, --analyze : analyze mode     - analyze vulnerability (quit)"
-    echo "      -d, --debug   : debug mode       - debugging emulation (no quit)"
-    echo "      -b, --boot    : boot debug mode  - kernel boot debugging using QEMU (no quit)"
+    echo "  -r, --run     : 运行模式"
+    #echo " -r, --run     : run mode         - run emulation (no quit)"
+
+    echo "  -t, --tri     : 蹦床模式"
+    #echo " -c, --check   : check mode       - check network reachable and web access (quit)"
+
+    #echo " -a, --analyze : analyze mode     - analyze vulnerability (quit)"
+    #echo " -d, --debug   : debug mode       - debugging emulation (no quit)"
+    #echo " -b, --boot    : boot debug mode  - kernel boot debugging using QEMU (no quit)"
 }
+
+MYAE_DATE=`date -d today +"%Y-%m-%d %H:%M:%S"`
+echo -e "【$MYAE_DATE】固件蹦床系统启动..."
+echo -e "输入参数: 【$@】\n"
 
 if [ $# -ne 3 ]; then
     print_usage ${0}
@@ -22,7 +31,7 @@ set +x
 echo -e "需要进入VERBOSE模式吗【(Y)es / N(o)】？"
 typeset -u MYAE_VERBOSE
 read -t 7 -p "您的输入：" MYAE_VERBOSE
-if (! echo $MYAE_VERBOSE|egrep -sqi '^Y$|^YES$'); then
+if (echo $MYAE_VERBOSE|egrep -sqi '^Y$|^YES$'); then
     set -x
 fi
 
@@ -39,10 +48,13 @@ fi
 MYAE_LOG_DIR="/opt/myae-log"
 mkdir -p ${MYAE_LOG_DIR}
 
+
 function get_option()
 {
     OPTION=${1}
-    if [ ${OPTION} = "-c" ] || [ ${OPTION} = "--check" ]; then
+    if [ ${OPTION} = "-t" ] || [ ${OPTION} = "--tri" ]; then
+        echo "check"
+    elif [ ${OPTION} = "-c" ] || [ ${OPTION} = "--check" ]; then
         echo "check"
     elif [ ${OPTION} = "-a" ] || [ ${OPTION} = "--analyze" ]; then
         echo "analyze"
@@ -93,6 +105,9 @@ function run_emulation()
     WEB_RESULT=false
     IP=''
 
+    echo "清理过期运行日志文件..."
+    find "$MYAE_LOG_DIR" -type f -name "*-$FILENAME.log" | xargs -I [] rm []
+
     if [ "${BRAND}" = "auto" ]; then
         echo -e "[\033[31m-\033[0m] Invalid brand ${INFILE}"
         return
@@ -113,11 +128,11 @@ function run_emulation()
     # ================================
     t_start="$(date -u +%s.%N)"
 
-    # If the brand is not specified in the argument, 
+    # If the brand is not specified in the argument,
     # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
-        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nk $INFILE images 2>&1 > "$MYAE_LOG_DIR/extractor.log"
+        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np -nk $INFILE images \
+        2>&1 |ts '[%Y-%m-%d %H:%M:%S]' >"$MYAE_LOG_DIR/extractor-$FILENAME.log"
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
@@ -128,11 +143,11 @@ function run_emulation()
     # ================================
     # extract kernel from firmware
     # ================================
-    # If the brand is not specified in the argument, it will be inferred 
-    # automatically from the path of the image file.
+    # If the brand is not specified in the argument,
+    # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
-        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nf $INFILE images 2>&1 >> "$MYAE_LOG_DIR/extractor.log"
+        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np -nf $INFILE images \
+        2>&1 |ts '[%Y-%m-%d %H:%M:%S]' >>"$MYAE_LOG_DIR/extractor-$FILENAME.log"
 
     WORK_DIR=`get_scratch ${IID}`
     echo "固件工作目录：【$WORK_DIR】"
@@ -154,18 +169,16 @@ function run_emulation()
 
     if [ ! -e ./images/$IID.tar.gz ]; then
         echo -e "[\033[31m-\033[0m] Extracting root filesystem failed!"
-        echo "extraction fail" > ${WORK_DIR}/result
+        echo "extraction failed" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] extract done!!!"
     t_end="$(date -u +%s.%N)"
     time_extract="$(bc <<<"$t_end-$t_start")"
     echo $time_extract > ${WORK_DIR}/time_extract
+    echo "固件提取完成，耗时：$time_extract"
 
-    # ================================
-    # check architecture
-    # ================================
+    echo -e "\n固件架构检测..."
     t_start="$(date -u +%s.%N)"
     ARCH=`./scripts/getArch.py ./images/$IID.tar.gz $PSQL_IP`
     echo "${ARCH}" > "${WORK_DIR}/architecture"
@@ -176,45 +189,41 @@ function run_emulation()
 
     if [ ! "${ARCH}" ]; then
         echo -e "[\033[31m-\033[0m] Get architecture failed!"
-        echo "get architecture fail" > ${WORK_DIR}/result
+        echo "get architecture failed" > ${WORK_DIR}/result
         return
     fi
     if ( check_arch ${ARCH} == 0 ); then
         echo -e "[\033[31m-\033[0m] Unknown architecture! - ${ARCH}"
-        echo "not valid architecture : ${ARCH}" > ${WORK_DIR}/result
+        echo "Invalid architecture : ${ARCH}" > ${WORK_DIR}/result
         return
     fi
 
-    echo "[*] get architecture done!!!"
     t_end="$(date -u +%s.%N)"
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
+    echo "架构检测完成，耗时：$time_arch"
 
     if (! egrep -sqi "true" ${WORK_DIR}/web); then
-        # ================================
-        # make qemu image
-        # ================================
+        echo -e "\n制作QEMU镜像..."
         t_start="$(date -u +%s.%N)"
-        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > ${MYAE_LOG_DIR}/tar2db.log
+        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > "${MYAE_LOG_DIR}/tar2db-$FILENAME.log"
         t_end="$(date -u +%s.%N)"
         time_tar="$(bc <<<"$t_end-$t_start")"
         echo $time_tar > ${WORK_DIR}/time_tar
 
         t_start="$(date -u +%s.%N)"
-        ./scripts/makeImage.sh $IID $ARCH $FILENAME 2>&1 > ${MYAE_LOG_DIR}/makeImage.log
+        ./scripts/makeImage.sh $IID $ARCH $FILENAME 2>&1 > "${MYAE_LOG_DIR}/makeImage-$FILENAME.log"
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
+        echo "制作QEMU镜像完成，耗时：`echo "scale=9; $time_tar + $time_image"|bc`"
 
-        # ================================
-        # infer network interface
-        # ================================
+        echo -e "\n固件网络尝试模拟..."
         t_start="$(date -u +%s.%N)"
-        echo "[*] infer network start!!!"
-        # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
-        # log collection.
+        # TIMEOUT is set in "firmae.config" and the TIMEOUT is used for initial log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-            ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} & > ${MYAE_LOG_DIR}/makeNetwork.log
+            ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} & > "${MYAE_LOG_DIR}/makeNetwork-$FILENAME.log"
+        rm -fr ${WORK_DIR}/run_[abd]*.sh
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true
@@ -222,8 +231,9 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
+        echo -e "固件网络模拟完成，耗时：$time_network"
     else
-        echo "[*] ${INFILE} already succeed emulation!!!"
+        echo -e "固件【${INFILE}】以前已成功模拟"
     fi
 
     if (egrep -sqi "true" ${WORK_DIR}/ping); then
@@ -246,12 +256,10 @@ function run_emulation()
     fi
 
     if [ ${OPTION} = "analyze" ]; then
-        # ================================
-        # analyze firmware (check vulnerability)
-        # ================================
+        # 分析挖漏
         t_start="$(date -u +%s.%N)"
         if ($WEB_RESULT); then
-            echo "[*] Waiting web service..."
+            echo -e "\n等待Web服务启动..."
             ${WORK_DIR}/run_analyze.sh &
             IP=`cat ${WORK_DIR}/ip`
             check_network ${IP} false
@@ -262,7 +270,7 @@ function run_emulation()
             cd -
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 1>&2 2 >> "$MYAE_LOG_DIR/kill-qemu.log"
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "$MYAE_LOG_DIR/kill-qemu-$FILENAME.log"
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Web unreachable"
@@ -272,11 +280,9 @@ function run_emulation()
         echo $time_analyze > ${WORK_DIR}/time_analyze
 
     elif [ ${OPTION} = "debug" ]; then
-        # ================================
-        # run debug mode.
-        # ================================
+        # 调试模式
         if ($PING_RESULT); then
-            echo -e "[\033[32m+\033[0m] Run debug!"
+            echo -e "[\033[32m+\033[0m] 进入调试模式"
             IP=`cat ${WORK_DIR}/ip`
             ./scratch/$IID/run_debug.sh &
             check_network ${IP} true
@@ -285,30 +291,29 @@ function run_emulation()
             ./debug.py ${IID}
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 1>&2 2 >> "$MYAE_LOG_DIR/kill-qemu.log" | true
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "$MYAE_LOG_DIR/kill-qemu-$FILENAME.log" | true
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Network unreachable"
         fi
+
     elif [ ${OPTION} = "run" ]; then
-        # ================================
-        # just run mode
-        # ================================
+        # 运行模式
+        echo -e "[\033[32m+\033[0m] 进入运行模式"
         check_network ${IP} false &
         ${WORK_DIR}/run.sh
+
     elif [ ${OPTION} = "boot" ]; then
-        # ================================
         # boot debug mode
-        # ================================
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
+        echo -e "BOOT_KERNEL_PATH=> 【$BOOT_KERNEL_PATH】"
+        echo -e "BOOT_KERNEL=> 【$BOOT_KERNEL】"
         echo -e "[\033[32m+\033[0m] Connect with gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote:1234'"
         ${WORK_DIR}/run_boot.sh
     fi
 
-    echo "[*] cleanup"
-    echo "======================================"
-
+    echo "===============清理&退出======================="
 }
 
 FIRMWARE=${3}

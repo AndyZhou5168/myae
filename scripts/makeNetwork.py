@@ -100,6 +100,7 @@ echo -n "Starting emulation of firmware... "
 echo "Done!"
 """
 
+
 def mountImage(targetDir):
     loopFile = subprocess.check_output(['bash', '-c', 'source firmae.config && add_partition %s/image.raw' % targetDir]).decode().strip()
     os.system('mount %s %s/image > /dev/null' % (loopFile, targetDir))
@@ -228,6 +229,7 @@ def isDhcpIp(ip):
         return True
     return False
 
+
 def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
     device = "virtio-net-device" if arch == "arm" else "e1000"
 
@@ -251,6 +253,7 @@ def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
             return "-device %(DEVICE)s,netdev=net%(I)i -netdev user,id=net%(I)i,%(FWD)s" % {'DEVICE': device, 'I': i, "FWD": portfwd[:-1]}
         else:
             return "-device %(DEVICE)s,netdev=net%(I)i -netdev tap,id=net%(I)i,ifname=${TAPDEV_%(TAP_NUM)i},script=no" % { 'I' : i, 'DEVICE' : device, 'TAP_NUM' : tap_num}
+
 
 def qemuNetworkConfig(arch, network, isUserNetwork, ports):
     output = []
@@ -281,6 +284,7 @@ def qemuNetworkConfig(arch, network, isUserNetwork, ports):
 
     return ' '.join(output)
 
+
 def buildConfig(brif, iface, vlans, macs):
     #there should be only one ip
     ip = brif[1]
@@ -310,6 +314,7 @@ def convertToHostIp(ip):
     else:
         tups[3] += 1
     return ".".join([str(x) for x in tups])
+
 
 # iterating the networks
 def startNetwork(network):
@@ -358,6 +363,7 @@ sudo ip route add %(GUESTIP)s via %(GUESTIP)s dev ${HOSTNETDEV_%(I)i}
         output.append(template_2 % {'I' : i, 'HOSTIP' : convertToHostIp(ip), 'GUESTIP': ip})
     return '\n'.join(output)
 
+
 def stopNetwork(network):
     template_1 = """
 echo "Bringing down TAP device..."
@@ -381,6 +387,7 @@ sudo tunctl -d ${TAPDEV_%(I)i}
             output.append(template_vlan % {'I' : i})
         output.append(template_2 % {'I' : i})
     return '\n'.join(output)
+
 
 def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, isUserNetwork):
     network_bridge = ""
