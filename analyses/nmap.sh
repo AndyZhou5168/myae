@@ -49,3 +49,5 @@ echo "[+] Found IP: ${TARGET_IP}"
 sudo nmap ${NMAP_OPTS} "${TARGET_IP}" -oA "$WORK_DIR"nmap-basic-tcp | tee "${WORK_DIR}"nmap-basic-tcp.txt 2>&1
 
 echo -e "\nDumped Nmap scan details of ${TARGET_IP} to $WORK_DIR"
+
+
