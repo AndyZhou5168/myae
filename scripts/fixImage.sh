@@ -42,7 +42,7 @@ if (${FIRMAE_BOOT}); then
   for FILE in `${BUSYBOX} find /bin /sbin /usr/bin /usr/sbin -type f -perm -u+x -exec ${BUSYBOX} strings {} \; | ${BUSYBOX} egrep "^(/var|/etc|/tmp)(.+)\/([^\/]+)$"`
   do
     DIR=`${BUSYBOX} dirname "${FILE}"`
-    if (! ${BUSYBOX} echo "${DIR}" | ${BUSYBOX} egrep -q "(%s|%c|%d|/tmp/services)"); then
+    if (! ${BUSYBOX} echo "${DIR}" | ${BUSYBOX} egrep -q "(%s|%c|%d|/tmp/services)");then
       ${BUSYBOX} echo "${DIR}" >> /firmadyne/dir_log
       mkdir -p "$(resolve_link ${DIR})"
     fi
@@ -170,15 +170,15 @@ if [ $FILECOUNT -lt "5" ]; then
 fi
 
 # create a gpio file required for linksys to make the watchdog happy
-if  ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
-    ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libcm.so) ||
-    ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libshared.so); then
-        echo "Creating /dev/gpio/in!"
-        if (${FIRMAE_BOOT}); then
-            rm /dev/gpio
-        fi
-        mkdir -p /dev/gpio
-        echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
+if ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
+  ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libcm.so) ||
+  ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libshared.so); then
+    echo "Creating /dev/gpio/in!"
+    if (${FIRMAE_BOOT}); then
+      rm /dev/gpio
+    fi
+    mkdir -p /dev/gpio
+    echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
 fi
 
 # prevent system from rebooting
