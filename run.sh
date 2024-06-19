@@ -16,24 +16,16 @@ function print_usage()
     #echo " -b, --boot    : boot debug mode  - kernel boot debugging using QEMU (no quit)"
 }
 
-MYAE_DATE=`date -d today +"%Y-%m-%d %H:%M:%S"`
-echo -e "【$MYAE_DATE】固件蹦床系统启动..."
+echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
 echo -e "输入参数: 【$@】\n"
-
 if [ $# -ne 3 ]; then
     print_usage ${0}
     exit 1
 fi
+
 set -e
 set -u
 set +x
-
-echo -e "需要进入VERBOSE模式吗【(Y)es / N(o)】？"
-typeset -u MYAE_VERBOSE
-read -t 7 -p "您的输入：" MYAE_VERBOSE
-if (echo $MYAE_VERBOSE|egrep -sqi '^Y$|^YES$'); then
-    set -x
-fi
 
 
 if [ -e ./firmae.config ]; then
@@ -44,9 +36,6 @@ else
     echo "Error: Could not find 'firmae.config'!"
     exit 1
 fi
-
-MYAE_LOG_DIR="/opt/myae-log"
-mkdir -p ${MYAE_LOG_DIR}
 
 
 function get_option()
@@ -105,9 +94,6 @@ function run_emulation()
     WEB_RESULT=false
     IP=''
 
-    echo "清理过期运行日志文件..."
-    find "$MYAE_LOG_DIR" -type f -name "*-$FILENAME.log" | xargs -I [] rm []
-
     if [ "${BRAND}" = "auto" ]; then
         echo -e "[\033[31m-\033[0m] Invalid brand ${INFILE}"
         return
@@ -131,8 +117,8 @@ function run_emulation()
     # If the brand is not specified in the argument,
     # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
-        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np -nk $INFILE images \
-        2>&1 |ts '[%Y-%m-%d %H:%M:%S]' >"$MYAE_LOG_DIR/extractor-$FILENAME.log"
+        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
+        -nk $INFILE images 2>&1 >/dev/null
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
@@ -146,11 +132,10 @@ function run_emulation()
     # If the brand is not specified in the argument,
     # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
-        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np -nf $INFILE images \
-        2>&1 |ts '[%Y-%m-%d %H:%M:%S]' >>"$MYAE_LOG_DIR/extractor-$FILENAME.log"
+        ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
+        -nf $INFILE images 2>&1 >/dev/null
 
     WORK_DIR=`get_scratch ${IID}`
-    echo "固件工作目录：【$WORK_DIR】"
     mkdir -p ${WORK_DIR}
     chmod a+rwx "${WORK_DIR}"
     chown -R "${USER}" "${WORK_DIR}"
@@ -176,7 +161,7 @@ function run_emulation()
     t_end="$(date -u +%s.%N)"
     time_extract="$(bc <<<"$t_end-$t_start")"
     echo $time_extract > ${WORK_DIR}/time_extract
-    echo "固件提取完成，耗时：$time_extract"
+    echo "固件提取完成，用时：$time_extract（秒）"
 
     echo -e "\n固件架构检测..."
     t_start="$(date -u +%s.%N)"
@@ -201,29 +186,28 @@ function run_emulation()
     t_end="$(date -u +%s.%N)"
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
-    echo "架构检测完成，耗时：$time_arch"
+    echo "架构检测完成，用时：$time_arch（秒）"
 
     if (! egrep -sqi "true" ${WORK_DIR}/web); then
         echo -e "\n制作QEMU镜像..."
         t_start="$(date -u +%s.%N)"
-        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > "${MYAE_LOG_DIR}/tar2db-$FILENAME.log"
+        ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > ${WORK_DIR}/tar2db.log
         t_end="$(date -u +%s.%N)"
         time_tar="$(bc <<<"$t_end-$t_start")"
         echo $time_tar > ${WORK_DIR}/time_tar
 
         t_start="$(date -u +%s.%N)"
-        ./scripts/makeImage.sh $IID $ARCH $FILENAME 2>&1 > "${MYAE_LOG_DIR}/makeImage-$FILENAME.log"
+        ./scripts/makeImage.sh $IID $ARCH $FILENAME 2>&1 > ${WORK_DIR}/makeImage.log
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
-        echo "制作QEMU镜像完成，耗时：`echo "scale=9; $time_tar + $time_image"|bc`"
+        echo "制作QEMU镜像完成，用时：`echo "scale=9; $time_tar + $time_image"|bc`（秒）"
 
         echo -e "\n固件网络尝试模拟..."
         t_start="$(date -u +%s.%N)"
         # TIMEOUT is set in "firmae.config" and the TIMEOUT is used for initial log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-            ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} & > "${MYAE_LOG_DIR}/makeNetwork-$FILENAME.log"
-        rm -fr ${WORK_DIR}/run_[abd]*.sh
+            ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} &> ${WORK_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true
@@ -231,7 +215,7 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
-        echo -e "固件网络模拟完成，耗时：$time_network"
+        echo -e "固件网络模拟完成，用时：$time_network（秒）"
     else
         echo -e "固件【${INFILE}】以前已成功模拟"
     fi
@@ -251,6 +235,7 @@ function run_emulation()
     if ($WEB_RESULT); then
         echo -e "[\033[32m+\033[0m] Web service on ${IP}"
         echo true > ${WORK_DIR}/result
+        echo -e "固件尝试模拟成功"
     else
         echo false > ${WORK_DIR}/result
     fi
@@ -270,7 +255,7 @@ function run_emulation()
             cd -
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "$MYAE_LOG_DIR/kill-qemu-$FILENAME.log"
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "${WORK_DIR}/kill-qemu.log"
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Web unreachable"
@@ -291,7 +276,7 @@ function run_emulation()
             ./debug.py ${IID}
 
             sync
-            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "$MYAE_LOG_DIR/kill-qemu-$FILENAME.log" | true
+            kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "${WORK_DIR}/kill-qemu.log" | true
             sleep 2
         else
             echo -e "[\033[31m-\033[0m] Network unreachable"
@@ -305,6 +290,7 @@ function run_emulation()
 
     elif [ ${OPTION} = "boot" ]; then
         # boot debug mode
+        echo -e "[\033[32m+\033[0m] 进入内核HOLD模式"
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
         echo -e "BOOT_KERNEL_PATH=> 【$BOOT_KERNEL_PATH】"
@@ -313,7 +299,7 @@ function run_emulation()
         ${WORK_DIR}/run_boot.sh
     fi
 
-    echo "===============清理&退出======================="
+    echo "=====执行完成====="
 }
 
 FIRMWARE=${3}

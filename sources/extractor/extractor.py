@@ -291,18 +291,15 @@ class ExtractionItem(object):
             cur.execute("SELECT id FROM brand WHERE name=%s", (brand, ))
             brand_id = cur.fetchone()
             if not brand_id:
-                cur.execute("INSERT INTO brand (name) VALUES (%s) RETURNING id",
-                            (brand, ))
+                cur.execute("INSERT INTO brand (name) VALUES (%s) RETURNING id", (brand, ))
                 brand_id = cur.fetchone()
             if brand_id:
-                cur.execute("SELECT id FROM image WHERE hash=%s",
-                            (self.checksum, ))
+                cur.execute("SELECT id FROM image WHERE hash=%s", (self.checksum, ))
                 image_id = cur.fetchone()
                 if not image_id:
                     cur.execute("INSERT INTO image (filename, brand_id, hash) \
-                                VALUES (%s, %s, %s) RETURNING id",
-                                (os.path.basename(self.item), brand_id[0],
-                                 self.checksum))
+                                 VALUES (%s, %s, %s) RETURNING id",
+                                (os.path.basename(self.item), brand_id[0], self.checksum))
                     image_id = cur.fetchone()
             self.database.commit()
         except BaseException:
@@ -362,8 +359,7 @@ class ExtractionItem(object):
         if self.database:
             try:
                 cur = self.database.cursor()
-                cur.execute("UPDATE image SET " + field + "='" + value +
-                            "' WHERE id=%s", (self.tag, ))
+                cur.execute("UPDATE image SET " + field + "='" + value + "' WHERE id=%s", (self.tag, ))
                 self.database.commit()
             except BaseException:
                 ret = False
@@ -376,8 +372,7 @@ class ExtractionItem(object):
 
     def get_status(self):
         """
-        Returns True if early terminate signaled, extraction is complete,
-        otherwise False.
+        Returns True if early terminate signaled, extraction is complete, otherwise False.
         """
         return True if self.terminate or all(i for i in self.status) else False
 
@@ -436,11 +431,11 @@ class ExtractionItem(object):
         try:
             self.printf(">> Tag: %s" % self.tag)
             self.printf(">> Temp: %s" % self.temp)
-            self.printf(">> Status: Kernel: %s, Rootfs: %s, Do_Kernel: %s, \
-                Do_Rootfs: %s" % (self.get_kernel_status(),
-                                  self.get_rootfs_status(),
-                                  self.extractor.do_kernel,
-                                  self.extractor.do_rootfs))
+            self.printf(">> Status: Kernel: %s, Rootfs: %s, Do_Kernel: %s, Do_Rootfs: %s" %(
+                self.get_kernel_status(),
+                self.get_rootfs_status(),
+                self.extractor.do_kernel,
+                self.extractor.do_rootfs))
 
             for module in binwalk.scan(self.item, "--run-as=root", "--preserve-symlinks",
                     "-e", "-r", "-C", self.temp, signature=True, quiet=True):
@@ -473,7 +468,6 @@ class ExtractionItem(object):
                     else:
                         self._check_recursive(module, entry)
 
-
         except Exception:
             print ("ERROR: ", self.item)
             traceback.print_exc()
@@ -490,8 +484,7 @@ class ExtractionItem(object):
 #        print (self.item)
 #        print (real_path)
         # First, use MIME-type to exclude large categories of files
-        filetype = Extractor.magic(real_path.encode("utf-8", "surrogateescape"),
-                                   mime=True)
+        filetype = Extractor.magic(real_path.encode("utf-8", "surrogateescape"), mime=True)
 #        print (filetype)
         if filetype:
             if any(s in filetype for s in ["application/x-executable",
@@ -609,24 +602,20 @@ class ExtractionItem(object):
 
                 # ensure that computed values are sensible
                 if kernel_size > 0 and rootfs_size > 0 and \
-                        kernel_offset + kernel_size <= image_size and \
-                        rootfs_offset + rootfs_size <= image_size:
+                    kernel_offset + kernel_size <= image_size and \
+                    rootfs_offset + rootfs_size <= image_size:
                     self.printf(">>>> %s" % desc)
 
                     tmp_fd, tmp_path = tempfile.mkstemp(dir=self.temp)
                     os.close(tmp_fd)
-                    Extractor.io_dd(self.item, kernel_offset, kernel_size,
-                                    tmp_path)
-                    kernel = ExtractionItem(self.extractor, tmp_path,
-                                            self.depth, self.tag, self.debug)
+                    Extractor.io_dd(self.item, kernel_offset, kernel_size, tmp_path)
+                    kernel = ExtractionItem(self.extractor, tmp_path, self.depth, self.tag, self.debug)
                     kernel.extract()
 
                     tmp_fd, tmp_path = tempfile.mkstemp(dir=self.temp)
                     os.close(tmp_fd)
-                    Extractor.io_dd(self.item, rootfs_offset, rootfs_size,
-                                    tmp_path)
-                    rootfs = ExtractionItem(self.extractor, tmp_path,
-                                            self.depth, self.tag, self.debug)
+                    Extractor.io_dd(self.item, rootfs_offset, rootfs_size, tmp_path)
+                    rootfs = ExtractionItem(self.extractor, tmp_path, self.depth, self.tag, self.debug)
                     rootfs.extract()
                     return True
         return False
@@ -745,9 +734,9 @@ def psql_check(psql_ip):
 def main():
     parser = argparse.ArgumentParser(description="Extracts filesystem and kernel from Linux-based firmware images")
 
-    parser.add_argument("input", action="store",help="Input file or directory")
-    parser.add_argument("output", action="store", nargs="?", default="images",help="Output directory for extracted firmware")
-    parser.add_argument("-sql ", dest="sql", action="store", default=None,help="Hostname of SQL server")
+    parser.add_argument("input", action="store", help="Input file or directory")
+    parser.add_argument("output", action="store", nargs="?", default="images", help="Output directory for extracted firmware")
+    parser.add_argument("-sql ", dest="sql", action="store", default=None, help="Hostname of SQL server")
     parser.add_argument("-nf", dest="rootfs", action="store_false", default=True, help="Disable extraction of root filesystem (may decrease extraction time)")
     parser.add_argument("-nk", dest="kernel", action="store_false", default=True, help="Disable extraction of kernel (may decrease extraction time)")
     parser.add_argument("-np", dest="parallel", action="store_false", default=True, help="Disable parallel operation (may increase extraction time)")
@@ -755,7 +744,7 @@ def main():
     parser.add_argument("-d", dest="debug", action="store_true", default=False, help="Print debug information")
 
     result = parser.parse_args()
-    print("\n提取过程前参数信息：{}\n".format(result))
+    print("提取过程前参数信息：{}\n".format(result))
 
     if psql_check(result.sql):
         extract = Extractor(result.input, result.output, result.rootfs, result.kernel,
