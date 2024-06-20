@@ -17,10 +17,49 @@ function print_usage()
 }
 
 echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
-echo -e "输入参数: 【$@】\n"
+
+function select_mode()
+{
+    FIRMWARE_LIST=('1: DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip' '2: DIR820LA1_FW105B03.zip' '3: DIR-320A1_FW121WWb03.bin')
+    FIRMWARE_EXEC=('DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip' 'DIR820LA1_FW105B03.zip' 'DIR-320A1_FW121WWb03.bin')
+
+    MODE_LIST=("1: 蹦床模式" "2: 运行模式")
+    MODE_EXEC=("-t" "-r")
+
+    echo -e "目前支持的固件列表 ${FIRMWARE_LIST[@]}"
+    echo -e "PLS选择相应的序号"
+    typeset -u U_FIRM_SELECT
+    read -t 300 -p "您的选择：" U_FIRM_SELECT
+    if [[ "$U_FIRM_SELECT" =~ ^[1-3]$ ]]; then
+        FIRM_SELECT=$U_FIRM_SELECT
+        FIRM_SELECT=`expr $FIRM_SELECT - 1`
+        FIRM_SELECT=${FIRMWARE_EXEC[$FIRM_SELECT]}
+        echo "选择的固件=> $FIRM_SELECT"
+    else
+        echo "无效输入：$FIRM_SELECT"
+        exit 1
+    fi
+
+    echo -e "\n目前支持的模式列表 ${MODE_LIST[@]}"
+    echo -e "PLS选择相应的序号"
+    typeset -u U_MODE_SELECT
+    read -t 300 -p "您的选择：" U_MODE_SELECT
+    if [[ "$U_MODE_SELECT" =~ ^[1-2]$ ]]; then
+        MODE_SELECT=$U_MODE_SELECT
+        MODE_SELECT=`expr $MODE_SELECT - 1`
+        MODE_SELECT="${MODE_EXEC[$MODE_SELECT]}"
+        echo "选择的模式=> $MODE_SELECT"
+    else
+        echo "无效输入：$MODE_SELECT"
+        exit 1
+    fi
+}
+
 if [ $# -ne 3 ]; then
-    print_usage ${0}
-    exit 1
+    #print_usage ${0}
+    select_mode
+else
+    echo -e "输入参数: 【$@】\n"
 fi
 
 set -e
@@ -41,6 +80,7 @@ fi
 function get_option()
 {
     OPTION=${1}
+
     if [ ${OPTION} = "-t" ] || [ ${OPTION} = "--tri" ]; then
         echo "check"
     elif [ ${OPTION} = "-c" ] || [ ${OPTION} = "--check" ]; then
@@ -69,9 +109,14 @@ function get_brand()
     fi
 }
 
-OPTION=`get_option ${1}`
+if [ $# -eq 3 ]; then
+    OPTION=`get_option ${1}`
+else
+    OPTION=`get_option ${MODE_SELECT}`
+fi
 if [ ${OPTION} == "none" ]; then
-    print_usage ${0}
+    #print_usage ${0}
+    echo "模式选项错误"
     exit 1
 fi
 
@@ -80,7 +125,10 @@ if (! id | egrep -sqi "root"); then
     exit 1
 fi
 
-BRAND=${2}
+BRAND="dlink"
+if [ $# -eq 3 ]; then
+    BRAND=${2}
+fi
 WORK_DIR=""
 IID=-1
 
@@ -203,7 +251,7 @@ function run_emulation()
         echo $time_image > ${WORK_DIR}/time_image
         echo "制作QEMU镜像完成，用时：`echo "scale=9; $time_tar + $time_image"|bc`（秒）"
 
-        echo -e "\n固件网络尝试模拟..."
+        echo -e "\n固件尝试模拟..."
         t_start="$(date -u +%s.%N)"
         # TIMEOUT is set in "firmae.config" and the TIMEOUT is used for initial log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
@@ -215,7 +263,7 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
-        echo -e "固件网络模拟完成，用时：$time_network（秒）"
+        echo -e "固件模拟完成，用时：$time_network（秒）"
     else
         echo -e "固件【${INFILE}】以前已成功模拟"
     fi
@@ -228,14 +276,15 @@ function run_emulation()
         WEB_RESULT=true
     fi
 
-    echo -e "\n[IID] ${IID}\n[\033[33mMODE\033[0m] ${OPTION}"
+    echo -e "\n[固件身份ID] ${IID}\n[\033[33mMODE\033[0m] ${OPTION}"
     if ($PING_RESULT); then
         echo -e "[\033[32m+\033[0m] Network reachable on ${IP}!"
     fi
     if ($WEB_RESULT); then
         echo -e "[\033[32m+\033[0m] Web service on ${IP}"
         echo true > ${WORK_DIR}/result
-        echo -e "固件尝试模拟成功"
+        rm -fr "~/fwdsc.${IID}" && ln -s ${WORK_DIR} "~/fwdsc.${IID}"
+        echo -e "固件尝试模拟成功\n"
     else
         echo false > ${WORK_DIR}/result
     fi
@@ -302,7 +351,11 @@ function run_emulation()
     echo "=====执行完成====="
 }
 
-FIRMWARE=${3}
+if [ $# -eq 3 ]; then
+    FIRMWARE=${3}
+else
+    FIRMWARE="./firmwares/$FIRM_SELECT"
+fi
 
 if [ ${OPTION} = "debug" ] && [ -d ${FIRMWARE} ]; then
     echo -e "[\033[31m-\033[0m] select firmware file on debug mode!"

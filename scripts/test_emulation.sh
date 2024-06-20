@@ -24,8 +24,7 @@ ARCH=${2}
 echo "[*] test emulator"
 ${WORK_DIR}/run.sh 2>&1 >${WORK_DIR}/emulation.log &
 
-sleep 10
-
+wait_sometime 10
 echo ""
 
 IPS=()
