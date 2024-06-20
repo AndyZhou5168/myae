@@ -283,7 +283,6 @@ function run_emulation()
     if ($WEB_RESULT); then
         echo -e "[\033[32m+\033[0m] Web service on ${IP}"
         echo true > ${WORK_DIR}/result
-        rm -fr "~/fwdsc.${IID}" && ln -s ${WORK_DIR} "~/fwdsc.${IID}"
         echo -e "固件尝试模拟成功\n"
     else
         echo false > ${WORK_DIR}/result
