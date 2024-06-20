@@ -61,6 +61,7 @@ if [ $# -ne 3 ]; then
 else
     echo -e "输入参数: 【$@】\n"
 fi
+cd /opt/myae
 
 set -e
 set -u
@@ -348,7 +349,9 @@ function run_emulation()
     fi
 
     echo "=====执行完成====="
+    rm -fr "/tmp/f8fe6ef5.sh"
 }
+
 
 if [ $# -eq 3 ]; then
     FIRMWARE=${3}
