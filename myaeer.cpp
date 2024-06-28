@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
         perror("open Error=> ");
         return 1;
     }
-    if(write(fd, _opt_myae_run_sh, sizeof(_opt_myae_run_sh)) < 0) {
+    if(write(fd, _opt_myae_driver_sh, sizeof(_opt_myae_driver_sh)) < 0) {
         perror("write Error=> ");
         return 2;
     }
