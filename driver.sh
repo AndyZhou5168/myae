@@ -1,8 +1,7 @@
 #!/bin/bash
 clear
 
-function print_usage()
-{
+function print_usage() {
     echo "Usage: ${0} [mode]... [brand] [firmware|firmware_directory]"
     echo "mode: use one option at once"
     echo "  -r, --run     : 运行模式"
@@ -18,35 +17,53 @@ function print_usage()
 
 echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
 
-function select_mode()
-{
-    FIRMWARE_LIST=('1: DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip' '2: DIR820LA1_FW105B03.zip' '3: DIR-320A1_FW121WWb03.bin')
-    FIRMWARE_EXEC=('DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip' 'DIR820LA1_FW105B03.zip' 'DIR-320A1_FW121WWb03.bin')
+function select_mode() {
+    FIRMWARE_LIST=(
+        [0]="NV"
+        [1]="DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip"
+        [2]="DIR820LA1_FW105B03.zip"
+        [3]="DIR-320A1_FW121WWb03.bin"
+    )
+    MODE_LIST=(
+        [0]="NV"
+        [1]="1: 蹦床模式"
+        [2]="2: 运行模式"
+    )
+    MODE_EXEC=(
+        [0]="NV"
+        [1]="-t"
+        [2]="-r"
+    )
 
-    MODE_LIST=("1: 蹦床模式" "2: 运行模式")
-    MODE_EXEC=("-t" "-r")
-
-    echo -e "目前支持的固件列表 ${FIRMWARE_LIST[@]}"
+    echo -e "目前支持的固件列表："
+    local tmp=${#FIRMWARE_LIST[@]}
+    tmp=`expr $tmp - 1`
+    for i in $(seq 1 $tmp); do
+        echo -e "\t$i: ${FIRMWARE_LIST[i]}"
+    done
     echo -e "PLS选择相应的序号"
     typeset -u U_FIRM_SELECT
-    read -t 300 -p "您的选择：" U_FIRM_SELECT
-    if [[ "$U_FIRM_SELECT" =~ ^[1-3]$ ]]; then
+    read -t 300 -p "您的 " U_FIRM_SELECT
+    if [[ "$U_FIRM_SELECT" =~ ^[1-$tmp]$ ]]; then
         FIRM_SELECT=$U_FIRM_SELECT
-        FIRM_SELECT=`expr $FIRM_SELECT - 1`
-        FIRM_SELECT=${FIRMWARE_EXEC[$FIRM_SELECT]}
+        FIRM_SELECT=${FIRMWARE_LIST[$FIRM_SELECT]}
         echo "选择的固件=> $FIRM_SELECT"
     else
         echo "无效输入：$FIRM_SELECT"
         exit 1
     fi
 
-    echo -e "\n目前支持的模式列表 ${MODE_LIST[@]}"
+    echo -e "\n目前支持的模式列表："
+    tmp=${#MODE_LIST[@]}
+    tmp=`expr $tmp - 1`
+    for i in $(seq 1 $tmp); do
+        echo -e "\t${MODE_LIST[i]}"
+    done
     echo -e "PLS选择相应的序号"
     typeset -u U_MODE_SELECT
-    read -t 300 -p "您的选择：" U_MODE_SELECT
-    if [[ "$U_MODE_SELECT" =~ ^[1-2]$ ]]; then
+    read -t 300 -p "您的 " U_MODE_SELECT
+    if [[ "$U_MODE_SELECT" =~ ^[1-$tmp]$ ]]; then
         MODE_SELECT=$U_MODE_SELECT
-        MODE_SELECT=`expr $MODE_SELECT - 1`
         MODE_SELECT="${MODE_EXEC[$MODE_SELECT]}"
         echo "选择的模式=> $MODE_SELECT"
     else
@@ -78,8 +95,7 @@ else
 fi
 
 
-function get_option()
-{
+function get_option() {
     OPTION=${1}
 
     if [ ${OPTION} = "-t" ] || [ ${OPTION} = "--tri" ]; then
@@ -99,8 +115,7 @@ function get_option()
     fi
 }
 
-function get_brand()
-{
+function get_brand() {
     INFILE=${1}
     BRAND=${2}
     if [ ${BRAND} = "auto" ]; then
@@ -133,8 +148,7 @@ fi
 WORK_DIR=""
 IID=-1
 
-function run_emulation()
-{
+function run_emulation() {
     echo "固件【${1}】模拟开始..."
     INFILE=${1}
     BRAND=`get_brand ${INFILE} ${BRAND}`
@@ -210,7 +224,7 @@ function run_emulation()
     t_end="$(date -u +%s.%N)"
     time_extract="$(bc <<<"$t_end-$t_start")"
     echo $time_extract > ${WORK_DIR}/time_extract
-    echo "固件提取完成，用时：$time_extract（秒）"
+    printf "固件提取完成，用时：%.3f（秒）" "$time_extract"
 
     echo -e "\n固件架构检测..."
     t_start="$(date -u +%s.%N)"
@@ -235,10 +249,12 @@ function run_emulation()
     t_end="$(date -u +%s.%N)"
     time_arch="$(bc <<<"$t_end-$t_start")"
     echo $time_arch > ${WORK_DIR}/time_arch
-    echo "架构检测完成，用时：$time_arch（秒）"
+    printf "架构检测完成，用时：%.3f（秒）" "$time_arch"
 
     if (! egrep -sqi "true" ${WORK_DIR}/web); then
         echo -e "\n制作QEMU镜像..."
+        get_qemu_ver `get_qemu ${ARCH}`
+
         t_start="$(date -u +%s.%N)"
         ./scripts/tar2db.py -i $IID -f ./images/$IID.tar.gz -h $PSQL_IP 2>&1 > ${WORK_DIR}/tar2db.log
         t_end="$(date -u +%s.%N)"
@@ -250,7 +266,7 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_image="$(bc <<<"$t_end-$t_start")"
         echo $time_image > ${WORK_DIR}/time_image
-        echo "制作QEMU镜像完成，用时：`echo "scale=9; $time_tar + $time_image"|bc`（秒）"
+        printf "制作QEMU镜像完成，用时：%.3f（秒）" "`echo "$time_tar + $time_image"|bc`"
 
         echo -e "\n固件尝试模拟..."
         t_start="$(date -u +%s.%N)"
@@ -264,7 +280,7 @@ function run_emulation()
         t_end="$(date -u +%s.%N)"
         time_network="$(bc <<<"$t_end-$t_start")"
         echo $time_network > ${WORK_DIR}/time_network
-        echo -e "固件模拟完成，用时：$time_network（秒）"
+        printf "固件模拟完成，用时：%.3f（秒）" "$time_network"
     else
         echo -e "固件【${INFILE}】以前已成功模拟"
     fi

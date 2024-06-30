@@ -82,14 +82,44 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
 
+add_cpenv ARCHEND
+add_cpenv IID
+add_cpenv RUN_MODE
+add_cpenv IMAGE
+add_cpenv KERNEL
+add_cpenv QEMU_DEBUG
+add_cpenv QEMU_BOOT
+add_cpenv QEMU
+add_cpenv QEMU_MACHINE
+add_cpenv QEMU_ROOTFS
+add_cpenv WORK_DIR
+add_cpenv DEVICE
+add_cpenv TAPDEV_0
+add_cpenv HOSTNETDEV_0
+add_cpenv USER
+add_cpenv QEMU_AUDIO_DRV
+add_cpenv FIRMAE_NET
+add_cpenv FIRMAE_NVRAM
+add_cpenv FIRMAE_KERNEL
+add_cpenv FIRMAE_ETC
+print_cpenv
 echo -n "[*]Starting emulation of firmware... "
-%(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} \\
-    %(QEMU_DISK)s -append "root=${QEMU_ROOTFS} console=ttyS0 nandsim.parts=64,64,64,64,64,64,64,64,64,64 %(QEMU_INIT)s rw debug ignore_loglevel print-fatal-signals=1 FIRMAE_NET=${FIRMAE_NET} FIRMAE_NVRAM=${FIRMAE_NVRAM} FIRMAE_KERNEL=${FIRMAE_KERNEL} FIRMAE_ETC=${FIRMAE_ETC} ${QEMU_DEBUG}" \\
-    -serial file:${WORK_DIR}/qemu.final.serial.log \\
-    -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
-    -monitor unix:/tmp/qemu.${IID},server,nowait \\
-    -display none \\
-    %(QEMU_NETWORK)s | true
+%(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} %(QEMU_DISK)s \\
+-append "root=${QEMU_ROOTFS} "\\
+"console=ttyS0 "\\
+"nandsim.parts=64,64,64,64,64,64,64,64,64,64 "\\
+"%(QEMU_INIT)s rw debug ignore_loglevel "\\
+"print-fatal-signals=1 "\\
+"FIRMAE_NET=${FIRMAE_NET} "\\
+"FIRMAE_NVRAM=${FIRMAE_NVRAM} "\\
+"FIRMAE_KERNEL=${FIRMAE_KERNEL} "\\
+"FIRMAE_ETC=${FIRMAE_ETC} "\\
+"${QEMU_DEBUG}" \\
+-serial file:${WORK_DIR}/qemu.final.serial.log \\
+-serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
+-monitor unix:/tmp/qemu.${IID},server,nowait \\
+-display none \\
+%(QEMU_NETWORK)s | true
 
 %(STOP_NET)s
 
@@ -354,7 +384,7 @@ sudo ip route add %(GUESTIP)s via %(GUESTIP)s dev ${HOSTNETDEV_%(I)i}
             output.append(template_vlan % {'I' : i, 'VLANID' : vlan})
         output.append(template_2 % {'I' : i, 'HOSTIP' : convertToHostIp(ip), 'GUESTIP': ip})
     output = '\n'.join(output)
-    print("{0}=> startNetwork结果: {1}".format(MYSELFNAME, output))
+    print("{0}=> startNetwork result >>> {1} <<<\n".format(MYSELFNAME, output))
     return output
 
 
