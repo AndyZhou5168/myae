@@ -20,10 +20,19 @@ rm -fr /opt/myae/scratch
 rm -fr /opt/myae/images
 rm -fr /tmp/qemu.*
 find /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I [] rm []
+rm -fr /tmp/18ce86af.sh
+rm -fr /tmp/f8fe6ef5.sh
 
 for table in "${tables[@]}"; do
     echo "truncating table: $table"
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -U "$PGUSER" -c "truncate table $table cascade;"
 done
 
-rm -fr "/tmp/18ce86af.sh /tmp/f8fe6ef5.sh"
+if [ -d "/home/andy/myae/myae_scratch" ]; then
+    umount /home/andy/myae/myae_scratch
+    rm -fr /home/andy/myae/myae_scratch
+fi
+if [ -d "/home/andy/myae/myae_images" ]; then
+    umount /home/andy/myae/myae_images
+    rm -fr /home/andy/myae/myae_images
+fi
