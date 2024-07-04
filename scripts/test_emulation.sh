@@ -24,7 +24,7 @@ ARCH=${2}
 echo "[*] test emulator"
 ${WORK_DIR}/run.sh 2>&1 >${WORK_DIR}/emulation.log &
 
-wait_sometime 10
+wait_sometime 10 false
 echo ""
 
 IPS=()
@@ -40,7 +40,7 @@ else
 fi
 
 echo -e "[*] Waiting web service... from ${IPS[@]}"
-read IP PING_RESULT WEB_RESULT TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false)
+read IP PING_RESULT WEB_RESULT TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false false)
 
 if [ "${PING_RESULT}" = "true" ]; then
     echo true > ${WORK_DIR}/ping
@@ -55,4 +55,4 @@ fi
 # Kill the qemu process, but keep the 'grep' process itself.
 kill $(ps aux | grep `get_qemu ${ARCH}` | grep -v grep | awk '{print $2}') | true
 
-sleep 2
+wait_sometime 2

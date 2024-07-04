@@ -18,10 +18,13 @@ tables=(
 
 rm -fr /opt/myae/scratch
 rm -fr /opt/myae/images
-rm -fr /tmp/qemu.*
 find /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I [] rm []
+rm -fr /home/andy/myae/extractor-nf.log
+rm -fr /home/andy/myae/extractor-nk.log
 rm -fr /tmp/18ce86af.sh
 rm -fr /tmp/f8fe6ef5.sh
+rm -fr /tmp/ae-lock
+rm -fr /tmp/qemu.*
 
 for table in "${tables[@]}"; do
     echo "truncating table: $table"

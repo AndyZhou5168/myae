@@ -60,7 +60,7 @@ class firmae_helper():
                         '/firmadyne/busybox mkdir -p /dev/pts',
                         '/firmadyne/busybox mount -t devpts devpts /dev/pts']:
             self.send(command + '\n')
-            time.sleep(0.1)
+            time.sleep(0.5)
         self.telnetInit = True
 
     def connect_socat(self):
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     fh.connect()
 
     def menu():
-        print('------------------------------')
-        print('|       FirmAE Debugger      |')
-        print('------------------------------')
+        print('******************************')
+        print('|       myae Debugger        |')
+        print('******************************')
         print('1. connect to socat')
         print('2. connect to shell')
         print('3. tcpdump')
@@ -148,7 +148,7 @@ if __name__ == '__main__':
             break
         except:
             print("incorrect selection")
-            break
+            continue
 
         if select == 1:
             fh.connect_socat()
@@ -169,4 +169,4 @@ if __name__ == '__main__':
             fh.file_transfer(target_filepath)
         elif select == 6:
             break
-        print('\n')
+    print('调试完成\n')

@@ -28,11 +28,13 @@ function select_mode() {
         [0]="NV"
         [1]="1: 蹦床模式"
         [2]="2: 运行模式"
+        [3]="3: 调试模式"
     )
     MODE_EXEC=(
         [0]="NV"
         [1]="-t"
         [2]="-r"
+        [3]="-d"
     )
 
     echo -e "目前支持的固件列表："
@@ -150,6 +152,13 @@ IID=-1
 
 function run_emulation() {
     echo "固件【${1}】模拟开始..."
+    if [ -f "/tmp/ae-lock" ]; then
+        echo "固件模拟其他进程运行中!!!"
+        return
+    else
+        touch /tmp/ae-lock
+    fi
+
     INFILE=${1}
     BRAND=`get_brand ${INFILE} ${BRAND}`
     FILENAME=`basename ${INFILE%.*}`
@@ -181,7 +190,7 @@ function run_emulation() {
     # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nk $INFILE images 2>&1 >/dev/null
+        -nk $INFILE images 2>&1
 
     IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
     if [ ! "${IID}" ]; then
@@ -196,7 +205,7 @@ function run_emulation() {
     # it will be inferred automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nf $INFILE images 2>&1 >/dev/null
+        -nf $INFILE images 2>&1
 
     WORK_DIR=`get_scratch ${IID}`
     mkdir -p ${WORK_DIR}
@@ -304,6 +313,7 @@ function run_emulation() {
     else
         echo false > ${WORK_DIR}/result
     fi
+    rm -fr /tmp/ae-lock
 
     if [ ${OPTION} = "analyze" ]; then
         # 分析挖漏
@@ -312,7 +322,7 @@ function run_emulation() {
             echo -e "\n等待Web服务启动..."
             ${WORK_DIR}/run_analyze.sh &
             IP=`cat ${WORK_DIR}/ip`
-            check_network ${IP} false
+            check_network ${IP} false true
 
             echo -e "[\033[32m+\033[0m] start pentest!"
             cd analyses
@@ -321,7 +331,7 @@ function run_emulation() {
 
             sync
             kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "${WORK_DIR}/kill-qemu.log"
-            sleep 2
+            wait_sometime 2
         else
             echo -e "[\033[31m-\033[0m] Web unreachable"
         fi
@@ -335,14 +345,13 @@ function run_emulation() {
             echo -e "[\033[32m+\033[0m] 进入调试模式"
             IP=`cat ${WORK_DIR}/ip`
             ./scratch/$IID/run_debug.sh &
-            check_network ${IP} true
 
-            sleep 10
+            check_network ${IP} true true
             ./debug.py ${IID}
 
             sync
             kill $(ps aux | grep `get_qemu ${ARCH}` | awk '{print $2}') 2> "${WORK_DIR}/kill-qemu.log" | true
-            sleep 2
+            wait_sometime 2
         else
             echo -e "[\033[31m-\033[0m] Network unreachable"
         fi
@@ -350,7 +359,7 @@ function run_emulation() {
     elif [ ${OPTION} = "run" ]; then
         # 运行模式
         echo -e "[\033[32m+\033[0m] 进入运行模式"
-        check_network ${IP} false &
+        check_network ${IP} false true &
         ${WORK_DIR}/run.sh
 
     elif [ ${OPTION} = "boot" ]; then

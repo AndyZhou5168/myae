@@ -75,7 +75,7 @@ if (echo ${RUN_MODE} | grep -q "debug"); then
 fi
 chmod a+x ${WORK_DIR}/image/firmadyne/debug.sh
 
-sleep 1
+wait_sometime 1 false
 sync
 umount ${WORK_DIR}/image > /dev/null
 del_partition ${DEVICE:0:$((${#DEVICE}-2))}

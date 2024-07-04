@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
 """
-Module that performs extraction. For usage, refer to documentation for the class
-'Extractor'. This module can also be executed directly,
-e.g. 'extractor.py <input> <output>'.
+    Module that performs extraction,
+    For usage, refer to documentation for the class 'Extractor',
+    This module can also be executed directly, e.g. 'extractor.py <input> <output>'.
 """
 
-import argparse
-import hashlib
-import multiprocessing
-import os
-import shutil
-import tempfile
-import traceback
-import pathlib
-
-import magic
-import binwalk
+import os, shutil, tempfile
+import traceback, hashlib, copy
+import argparse, multiprocessing
+import pathlib, magic, binwalk
 
 class Extractor(object):
     """
@@ -744,7 +738,9 @@ def main():
     parser.add_argument("-d", dest="debug", action="store_true", default=False, help="Print debug information")
 
     result = parser.parse_args()
-    print("提取过程前参数信息：{}\n".format(result))
+    logrlt = copy.deepcopy(result)
+    logrlt.input = logrlt.input[logrlt.input.rfind('/')+1 :]
+    print("萃取过程入参=> {}\n".format(logrlt))
 
     if psql_check(result.sql):
         extract = Extractor(result.input, result.output, result.rootfs, result.kernel,
