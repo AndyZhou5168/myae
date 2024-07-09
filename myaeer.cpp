@@ -9,12 +9,12 @@
 
 int main(int argc, char* argv[]) {
     int fd(0);
-    const char* cursh("/tmp/f8fe6ef5.sh");
+    const char* cursh("/var/tmp/f8fe6ef5.sh");
     unsigned char* sharr(_opt_myae_driver_sh);
     int slen(sizeof(_opt_myae_driver_sh));
 
     if(2==argc && !strncmp(argv[1], "--clean", 7)) {
-        cursh = "/tmp/18ce86af.sh";
+        cursh = "/var/tmp/18ce86af.sh";
         sharr = _opt_myae_clean_sh;
         slen = sizeof(_opt_myae_clean_sh);
     } else {

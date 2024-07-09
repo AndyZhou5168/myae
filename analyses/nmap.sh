@@ -1,15 +1,8 @@
 #!/bin/bash
+source ../util/util.sh
+chk_myae_config
 
 set -u
-
-if [ -e ./firmae.config ]; then
-    source ./firmae.config
-elif [ -e ../firmae.config ]; then
-    source ../firmae.config
-else
-    echo "Error: Could not find 'firmae.config'!"
-    exit 1
-fi
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <image ID>"

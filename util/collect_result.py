@@ -12,7 +12,7 @@ results = {}
 SCRATCH_DIR = ''
 
 for i in xrange(3):
-    if os.path.exists('../' * i + 'firmae.config'):
+    if os.path.exists('../' * i + 'myae.config'):
         SCRATCH_DIR = '../' * i + 'scratch'
 
 for roots, dirs, files in os.walk(SCRATCH_DIR):

@@ -19,19 +19,19 @@ MYSELFNAME = sys._getframe().f_code.co_filename
 QEMUCMDTEMPLATE = """#!/bin/bash
 
 set -e
-set -u
+set +u
 
 ARCHEND=%(ARCHEND)s
 IID=%(IID)i
 
-if [ -e ./firmae.config ]; then
-    source ./firmae.config
-elif [ -e ../firmae.config ]; then
-    source ../firmae.config
-elif [ -e ../../firmae.config ]; then
-    source ../../firmae.config
+if [ -e ./myae.config ]; then
+    source ./myae.config
+elif [ -e ../myae.config ]; then
+    source ../myae.config
+elif [ -e ../../myae.config ]; then
+    source ../../myae.config
 else
-    echo "Error: Could not find 'firmae.config'!"
+    echo "Error: not found 'myae.config'!!!"
     exit 1
 fi
 
@@ -81,7 +81,9 @@ umount ${WORK_DIR}/image > /dev/null
 del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
+QEMU_INIT=%(QEMU_INIT_1)s
 
+add_cpenv QEMU_INIT
 add_cpenv ARCHEND
 add_cpenv IID
 add_cpenv RUN_MODE
@@ -102,6 +104,7 @@ add_cpenv FIRMAE_NET
 add_cpenv FIRMAE_NVRAM
 add_cpenv FIRMAE_KERNEL
 add_cpenv FIRMAE_ETC
+
 print_cpenv
 echo -n "[*]Starting emulation of firmware... "
 %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} %(QEMU_DISK)s \\
@@ -127,14 +130,14 @@ echo "Done!"
 """
 
 def mountImage(targetDir):
-    loopFile = subprocess.check_output(['bash', '-c', 'source firmae.config && add_partition %s/image.raw' % targetDir]).decode().strip()
+    loopFile = subprocess.check_output(['bash', '-c', 'source myae.config && add_partition %s/image.raw' % targetDir]).decode().strip()
     os.system('mount %s %s/image > /dev/null' % (loopFile, targetDir))
     time.sleep(1)
     return loopFile
 
 def umountImage(targetDir, loopFile):
     os.system('umount %s/image > /dev/null' % targetDir)
-    subprocess.check_output(['bash', '-c', 'source firmae.config && del_partition %s' % loopFile.rsplit('p', 1)[0]])
+    subprocess.check_output(['bash', '-c', 'source myae.config && del_partition %s' % loopFile.rsplit('p', 1)[0]])
 
 def checkVariable(key):
     return True if os.environ[key] == 'true' else False
@@ -437,17 +440,20 @@ def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, 
         network_iface = dev
         break
 
-    return QEMUCMDTEMPLATE % {'IID': iid,
-                              'NETWORK_TYPE' : network_type,
-                              'NET_BRIDGE' : network_bridge,
-                              'NET_INTERFACE' : network_iface,
-                              'START_NET' : startNetwork(network),
-                              'STOP_NET' : stopNetwork(network),
-                              'ARCHEND' : arch + endianness,
-                              'QEMU_DISK' : qemuDisk,
-                              'QEMU_INIT' : qemuInitValue,
-                              'QEMU_NETWORK' : qemuNetworkConfig(arch, network, isUserNetwork, ports),
-                              'QEMU_ENV_VARS' : qemuEnvVars}
+    return QEMUCMDTEMPLATE % {
+        'IID'           : iid,
+        'NETWORK_TYPE'  : network_type,
+        'NET_BRIDGE'    : network_bridge,
+        'NET_INTERFACE' : network_iface,
+        'START_NET'     : startNetwork(network),
+        'STOP_NET'      : stopNetwork(network),
+        'ARCHEND'       : arch + endianness,
+        'QEMU_DISK'     : qemuDisk,
+        'QEMU_INIT'     : qemuInitValue,
+        'QEMU_INIT_1'   : qemuInitValue,
+        'QEMU_NETWORK'  : qemuNetworkConfig(arch, network, isUserNetwork, ports),
+        'QEMU_ENV_VARS' : qemuEnvVars,
+    }
 
 def getNetworkList(data, ifacesWithIps, macChanges):
     global debug
@@ -749,9 +755,9 @@ def archEnd(value):
 
 
 def getWorkDir():
-    if os.path.isfile("./firmae.config"):
+    if os.path.isfile("./myae.config"):
         return os.getcwd()
-    elif os.path.isfile("../firmae.config"):
+    elif os.path.isfile("../myae.config"):
         path = os.getcwd()
         return path[:path.rfind('/')]
     else:
@@ -766,7 +772,7 @@ def main():
     endianness = None
     workDir = getWorkDir()
     if not workDir:
-        raise Exception("Can't find firmae.config file")
+        raise Exception("not found 'myae.config'!!!")
 
     global SCRATCHDIR
     global SCRIPTDIR

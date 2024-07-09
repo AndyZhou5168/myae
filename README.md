@@ -70,9 +70,9 @@ $ sudo ./run.sh -b <brand> <firmware>
 
 ## Turn on/off arbitration
 
-Check the five arbitrations environment variable in the `firmae.config`
+Check the five arbitrations environment variable in the `myae.config`
 ```sh
-$ head firmae.config
+$ head myae.config
 #!/bin/sh
 
 FIRMAE_BOOT=true

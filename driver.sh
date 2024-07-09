@@ -1,5 +1,6 @@
 #!/bin/bash
 clear
+echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
 
 function print_usage() {
     echo "Usage: ${0} [mode]... [brand] [firmware|firmware_directory]"
@@ -15,8 +16,6 @@ function print_usage() {
     #echo " -b, --boot    : boot debug mode  - kernel boot debugging using QEMU (no quit)"
 }
 
-echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
-
 function select_mode() {
     FIRMWARE_LIST=(
         [0]="NV"
@@ -29,13 +28,9 @@ function select_mode() {
         [1]="1: 蹦床模式"
         [2]="2: 运行模式"
         [3]="3: 调试模式"
+        [4]="4: 内核HOLD"
     )
-    MODE_EXEC=(
-        [0]="NV"
-        [1]="-t"
-        [2]="-r"
-        [3]="-d"
-    )
+    MODE_EXEC=([0]="NV" [1]="-t" [2]="-r" [3]="-d" [4]="-b")
 
     echo -e "目前支持的固件列表："
     local tmp=${#FIRMWARE_LIST[@]}
@@ -45,7 +40,7 @@ function select_mode() {
     done
     echo -e "PLS选择相应的序号"
     typeset -u U_FIRM_SELECT
-    read -t 300 -p "您的 " U_FIRM_SELECT
+    read -t 300 -p "您的" U_FIRM_SELECT
     if [[ "$U_FIRM_SELECT" =~ ^[1-$tmp]$ ]]; then
         FIRM_SELECT=$U_FIRM_SELECT
         FIRM_SELECT=${FIRMWARE_LIST[$FIRM_SELECT]}
@@ -63,11 +58,11 @@ function select_mode() {
     done
     echo -e "PLS选择相应的序号"
     typeset -u U_MODE_SELECT
-    read -t 300 -p "您的 " U_MODE_SELECT
+    read -t 300 -p "您的" U_MODE_SELECT
     if [[ "$U_MODE_SELECT" =~ ^[1-$tmp]$ ]]; then
         MODE_SELECT=$U_MODE_SELECT
+        echo -e "选择的模式=> ${MODE_LIST[$MODE_SELECT]%%模式*}\n"
         MODE_SELECT="${MODE_EXEC[$MODE_SELECT]}"
-        echo "选择的模式=> $MODE_SELECT"
     else
         echo "无效输入：$MODE_SELECT"
         exit 1
@@ -85,17 +80,7 @@ cd /opt/myae
 set -e
 set -u
 set +x
-
-
-if [ -e ./firmae.config ]; then
-    source ./firmae.config
-elif [ -e ../firmae.config ]; then
-    source ../firmae.config
-else
-    echo "Error: Could not find 'firmae.config'!"
-    exit 1
-fi
-
+source ./myae.config
 
 function get_option() {
     OPTION=${1}
@@ -152,11 +137,11 @@ IID=-1
 
 function run_emulation() {
     echo "固件【${1}】模拟开始..."
-    if [ -f "/tmp/ae-lock" ]; then
-        echo "固件模拟其他进程运行中!!!"
+    if [ -f "/var/tmp/ae-lock" ]; then
+        echo "固件模拟其他进程运行中，禁止多开!!!"
         return
     else
-        touch /tmp/ae-lock
+        touch /var/tmp/ae-lock
     fi
 
     INFILE=${1}
@@ -279,7 +264,7 @@ function run_emulation() {
 
         echo -e "\n固件尝试模拟..."
         t_start="$(date -u +%s.%N)"
-        # TIMEOUT is set in "firmae.config" and the TIMEOUT is used for initial log collection.
+        # TIMEOUT is set in "myae.config" and the TIMEOUT is used for initial log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
             ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} &> ${WORK_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
@@ -313,7 +298,7 @@ function run_emulation() {
     else
         echo false > ${WORK_DIR}/result
     fi
-    rm -fr /tmp/ae-lock
+    rm -fr /var/tmp/ae-lock
 
     if [ ${OPTION} = "analyze" ]; then
         # 分析挖漏
@@ -363,18 +348,17 @@ function run_emulation() {
         ${WORK_DIR}/run.sh
 
     elif [ ${OPTION} = "boot" ]; then
-        # boot debug mode
+        # 内核HOLD
         echo -e "[\033[32m+\033[0m] 进入内核HOLD模式"
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
-        echo -e "BOOT_KERNEL_PATH=> 【$BOOT_KERNEL_PATH】"
         echo -e "BOOT_KERNEL=> 【$BOOT_KERNEL】"
         echo -e "[\033[32m+\033[0m] Connect with gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote:1234'"
         ${WORK_DIR}/run_boot.sh
     fi
 
     echo "=====执行完成====="
-    rm -fr "/tmp/f8fe6ef5.sh"
+    rm -fr "/var/tmp/f8fe6ef5.sh"
 }
 
 

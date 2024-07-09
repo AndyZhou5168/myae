@@ -8,12 +8,12 @@ fi
 set -e
 set -u
 
-if [ -e ./firmae.config ]; then
-    source ./firmae.config
-elif [ -e ../firmae.config ]; then
-    source ../firmae.config
+if [ -e ./myae.config ]; then
+    source ./myae.config
+elif [ -e ../myae.config ]; then
+    source ../myae.config
 else
-    echo "Error: Could not find 'firmae.config'!"
+    echo "Error: not found 'myae.config'!!!"
     exit 1
 fi
 
@@ -39,7 +39,7 @@ else
   done
 fi
 
-echo -e "[*] Waiting web service... from ${IPS[@]}"
+echo -e "[*] Waiting Web service... from ${IPS[@]}"
 read IP PING_RESULT WEB_RESULT TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false false)
 
 if [ "${PING_RESULT}" = "true" ]; then
