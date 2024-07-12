@@ -31,9 +31,16 @@ done
 
 if [ -d "/home/andy/myae/myae_scratch" ]; then
     umount /home/andy/myae/myae_scratch
+    sleep 2
     rm -fr /home/andy/myae/myae_scratch
 fi
 if [ -d "/home/andy/myae/myae_images" ]; then
     umount /home/andy/myae/myae_images
+    sleep 2
     rm -fr /home/andy/myae/myae_images
+fi
+if [ -d "/home/andy/myae/binaries" ]; then
+    umount /home/andy/myae/binaries
+    sleep 2
+    rm -fr /home/andy/myae/binaries
 fi

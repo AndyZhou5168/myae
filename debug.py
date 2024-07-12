@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-import os.path
-import subprocess
-import signal
-import sys
-import time
-import pdb
+#coding=utf-8
+
+import sys, os.path
+import subprocess, signal, time
 from socket import *
 
 version_info = sys.version_info
@@ -55,10 +53,12 @@ class firmae_helper():
             self.sock.send(cmd.encode())
 
     def initalize_telnet(self):
-        for command in ['/firmadyne/busybox mkdir -p /proc',
-                        '/firmadyne/busybox ln -sf /proc/mounts /etc/mtab',
-                        '/firmadyne/busybox mkdir -p /dev/pts',
-                        '/firmadyne/busybox mount -t devpts devpts /dev/pts']:
+        for command in [
+            '/firmadyne/busybox mkdir -p /proc',
+            '/firmadyne/busybox ln -sf /proc/mounts /etc/mtab',
+            '/firmadyne/busybox mkdir -p /dev/pts',
+            '/firmadyne/busybox mount -t devpts devpts /dev/pts',
+            ]:
             self.send(command + '\n')
             time.sleep(0.5)
         self.telnetInit = True
@@ -75,18 +75,20 @@ class firmae_helper():
         if self.netcatOn:
             if not self.telnetInit:
                 self.initalize_telnet()
-            subprocess.call(['telnet',self.targetIP,'31338'])
+            subprocess.call(['telnet', self.targetIP, '31338'])
 
     def show_processlist(self):
-        print(self.sendrecv('ps\n'))
+        self.pids = self.sendrecv("ps|awk '{print $1}'\n")
+        self.pids = self.pids.split('\n')[1:]
+        print(self.sendrecv("ps|awk '{print $0}'\n"))
 
     def tcpdump(self):
-        argument = input('sudo tcpdump -i tap%d ' % self.iid)
-        os.system('sudo tcpdump -i tap%d %s' % (self.iid, argument))
+        argument = input('sudo tcpdump -i tap%d ' %self.iid)
+        os.system('sudo tcpdump -i tap%d %s' %(self.iid, argument))
 
     def file_transfer(self, target_filepath):
         file_name = os.path.basename(target_filepath)
-        self.send('/firmadyne/busybox nc -lp 31339 > /firmadyne/%s &\n' % file_name)
+        self.send('/firmadyne/busybox nc -lp 31339 > /firmadyne/%s &\n' %file_name)
         time.sleep(1)
         os.system('cat ' + target_filepath + ' | nc ' + self.targetIP + ' 31339 &')
         while True:
@@ -96,10 +98,10 @@ class firmae_helper():
                 break
         print('[*] transfer complete!')
 
-    def run_gdbserver(self, PID, PORT=1337):
-        print('[+] gdbserver at %s:%d attach on %s' % (self.targetIP, PORT, PID))
-        print('[+] run "target remote %s:%d" in host gdb-multiarch' % (self.targetIP, PORT))
-        self.send('/firmadyne/gdbserver %s:%d --attach %s\n'%(self.targetIP, PORT, PID))
+    def run_gdbserver(self, PID, PORT=5168):
+        print('[+] gdbserver at %s:%d attach on %s' %(self.targetIP, PORT, PID))
+        print('[+] run "target remote %s:%d" in host gdb-multiarch' %(self.targetIP, PORT))
+        self.send('/firmadyne/gdbserver %s:%d --attach %s\n' %(self.targetIP, PORT, PID))
 
 
 def signal_handler(sig, frame):
@@ -133,40 +135,45 @@ if __name__ == '__main__':
         print('******************************')
         print('|       myae Debugger        |')
         print('******************************')
-        print('1. connect to socat')
-        print('2. connect to shell')
-        print('3. tcpdump')
-        print('4. run gdbserver')
-        print('5. file transfer')
-        print('6. exit')
+        print('[ 1 ] 调试固件') #run gdbserver
+        print('[ 2 ] 登录固件') #connect to shell
+        print('[ 3 ] 抓包固件') #tcpdump
+        print('[ 4 ] 文件传输') #file transfer
+        print('[ 5 ] 退出调试') #exit
+        #print('1. connect to socat')
 
-    while 1:
+    while True:
         menu()
         try:
-            select = int(input('> '))
+            select = int(input(':> '))
         except KeyboardInterrupt:
             break
         except:
             print("incorrect selection")
             continue
 
-        if select == 1:
+        if select == 13851687968:
             fh.connect_socat()
-        if select == 2:
+        elif select == 2:
             fh.connect_shell()
         elif select == 3:
             fh.tcpdump()
-        elif select == 4:
+        elif select == 1:
             fh.show_processlist()
             try:
-                PID = input('[+] target pid : ')
+                PID = input('[+] target pid: ')
             except KeyboardInterrupt:
                 pass
             else:
+                if PID not in fh.pids:
+                    print("目标进程ID【%s】不存在!" %PID)
+                    continue
                 fh.run_gdbserver(PID)
-        elif select == 5:
+        elif select == 4:
             target_filepath = input('[+] target file path : ')
             fh.file_transfer(target_filepath)
-        elif select == 6:
+        elif select == 5:
             break
+        else:
+            print("选择序号无效【%s】" %select)
     print('调试完成\n')

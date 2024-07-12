@@ -25,10 +25,10 @@ function select_mode() {
     )
     MODE_LIST=(
         [0]="NV"
-        [1]="1: 蹦床模式"
-        [2]="2: 运行模式"
-        [3]="3: 调试模式"
-        [4]="4: 内核HOLD"
+        [1]="[ 1 ] 蹦床模式"
+        [2]="[ 2 ] 运行模式"
+        [3]="[ 3 ] 调试模式"
+        [4]="[ 4 ] 内核HOLD"
     )
     MODE_EXEC=([0]="NV" [1]="-t" [2]="-r" [3]="-d" [4]="-b")
 
@@ -36,7 +36,7 @@ function select_mode() {
     local tmp=${#FIRMWARE_LIST[@]}
     tmp=`expr $tmp - 1`
     for i in $(seq 1 $tmp); do
-        echo -e "\t$i: ${FIRMWARE_LIST[i]}"
+        echo -e "\t[ $i ] ${FIRMWARE_LIST[i]}"
     done
     echo -e "PLS选择相应的序号"
     typeset -u U_FIRM_SELECT
@@ -350,10 +350,15 @@ function run_emulation() {
     elif [ ${OPTION} = "boot" ]; then
         # 内核HOLD
         echo -e "[\033[32m+\033[0m] 进入内核HOLD模式"
+        if [ ! -d "/home/andy/myae/binaries" ]; then
+            mkdir -p /home/andy/myae/binaries
+            chmod -R 777 /home/andy/myae/binaries
+            mount --bind /opt/myae/binaries /home/andy/myae/binaries
+        fi
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
         echo -e "BOOT_KERNEL=> 【$BOOT_KERNEL】"
-        echo -e "[\033[32m+\033[0m] Connect with gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote:1234'"
+        echo -e "[\033[32m+\033[0m] Connect with=> gdb-multiarch -q ${BOOT_KERNEL} -ex='target remote :1234'"
         ${WORK_DIR}/run_boot.sh
     fi
 
