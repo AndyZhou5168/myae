@@ -1,6 +1,6 @@
 #!/bin/bash
 clear
-echo -e "固件蹦床系统启动，进程号【$$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
+echo -e "固件蹦床系统启动，进程号【$PPID - $$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
 
 function print_usage() {
     echo "Usage: ${0} [mode]... [brand] [firmware|firmware_directory]"
@@ -17,12 +17,11 @@ function print_usage() {
 }
 
 function select_mode() {
-    FIRMWARE_LIST=(
-        [0]="NV"
-        [1]="DIR-868L_fw_revB_2-05b02_eu_multi_20161117.zip"
-        [2]="DIR820LA1_FW105B03.zip"
-        [3]="DIR-320A1_FW121WWb03.bin"
-    )
+    FIRMWARE_LIST=([0]="NV")
+    for i in `ls ./firmwares/|grep -v README.md`; do
+        FIRMWARE_LIST+=("$i")
+    done
+
     MODE_LIST=(
         [0]="NV"
         [1]="[ 1 ] 蹦床模式"
@@ -61,7 +60,8 @@ function select_mode() {
     read -t 300 -p "您的" U_MODE_SELECT
     if [[ "$U_MODE_SELECT" =~ ^[1-$tmp]$ ]]; then
         MODE_SELECT=$U_MODE_SELECT
-        echo -e "选择的模式=> ${MODE_LIST[$MODE_SELECT]%%模式*}\n"
+        local TMP="${MODE_LIST[$MODE_SELECT]%%模式*}"
+        echo -e "选择的模式=> ${TMP:5}\n"
         MODE_SELECT="${MODE_EXEC[$MODE_SELECT]}"
     else
         echo "无效输入：$MODE_SELECT"
@@ -69,18 +69,19 @@ function select_mode() {
     fi
 }
 
+cd /opt/myae
 if [ $# -ne 3 ]; then
     #print_usage ${0}
     select_mode
 else
     echo -e "输入参数: 【$@】\n"
 fi
-cd /opt/myae
 
 set -e
 set -u
 set +x
 source ./myae.config
+reg_engine_toweb $PPID
 
 function get_option() {
     OPTION=${1}
@@ -128,7 +129,8 @@ if (! id | egrep -sqi "root"); then
     exit 1
 fi
 
-BRAND="dlink"
+FIRMWARE="./firmwares/$FIRM_SELECT"
+BRAND=`get_brand_fromweb ${FIRM_SELECT}`
 if [ $# -eq 3 ]; then
     BRAND=${2}
 fi
@@ -366,11 +368,8 @@ function run_emulation() {
     rm -fr "/var/tmp/f8fe6ef5.sh"
 }
 
-
 if [ $# -eq 3 ]; then
     FIRMWARE=${3}
-else
-    FIRMWARE="./firmwares/$FIRM_SELECT"
 fi
 
 if [ ${OPTION} = "debug" ] && [ -d ${FIRMWARE} ]; then

@@ -15,6 +15,7 @@ tables=(
     "object_to_image"
     "product"
 )
+MYAEPATHPREFIX=/home/andy/myae
 
 rm -fr /opt/myae/scratch
 rm -fr /opt/myae/images
@@ -29,18 +30,18 @@ for table in "${tables[@]}"; do
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -U "$PGUSER" -c "truncate table $table cascade;"
 done
 
-if [ -d "/home/andy/myae/myae_scratch" ]; then
-    umount /home/andy/myae/myae_scratch
+if [ -d "$MYAEPATHPREFIX/data/myae_scratch" ]; then
+    umount "$MYAEPATHPREFIX/data/myae_scratch"
     sleep 2
-    rm -fr /home/andy/myae/myae_scratch
+    rm -fr "$MYAEPATHPREFIX/data/myae_scratch"
 fi
-if [ -d "/home/andy/myae/myae_images" ]; then
-    umount /home/andy/myae/myae_images
+if [ -d "$MYAEPATHPREFIX/data/myae_images" ]; then
+    umount "$MYAEPATHPREFIX/data/myae_images"
     sleep 2
-    rm -fr /home/andy/myae/myae_images
+    rm -fr "$MYAEPATHPREFIX/data/myae_images"
 fi
-if [ -d "/home/andy/myae/binaries" ]; then
-    umount /home/andy/myae/binaries
+if [ -d "$MYAEPATHPREFIX/binaries" ]; then
+    umount "$MYAEPATHPREFIX/binaries"
     sleep 2
-    rm -fr /home/andy/myae/binaries
+    rm -fr "$MYAEPATHPREFIX/binaries"
 fi

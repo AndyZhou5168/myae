@@ -121,6 +121,7 @@ echo -n "[*]Starting emulation of firmware... "
 -serial file:${WORK_DIR}/qemu.final.serial.log \\
 -serial unix:/tmp/qemu.${IID}.S1,server,nowait \\
 -monitor unix:/tmp/qemu.${IID},server,nowait \\
+-d unimp,guest_errors \\
 -display none \\
 %(QEMU_NETWORK)s | true
 

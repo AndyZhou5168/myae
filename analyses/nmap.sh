@@ -1,8 +1,15 @@
 #!/bin/bash
-source ../util/util.sh
-chk_myae_config
 
 set -u
+
+if [ -e ./myae.config ]; then
+    source ./myae.config
+elif [ -e ../myae.config ]; then
+    source ../myae.config
+else
+    echo "Error: not found 'myae.config'!!!"
+    exit 1
+fi
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <image ID>"

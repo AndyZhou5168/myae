@@ -50,4 +50,5 @@ QEMU_AUDIO_DRV=none qemu-system-arm -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} 
 -serial file:${WORK_DIR}/qemu.initial.serial.log \
 -serial unix:/tmp/qemu.${IID}.S1,server,nowait \
 -monitor unix:/tmp/qemu.${IID},server,nowait \
+-d unimp,guest_errors \
 -display none ${QEMU_NETWORK}

