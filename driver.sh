@@ -1,6 +1,8 @@
 #!/bin/bash
 clear
-echo -e "固件蹦床系统启动，进程号【$PPID - $$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S'`】..."
+echo -n "" > /proc/$$/fd/1
+echo -e "固件蹦床系统启动，进程号【$PPID - $$】，时间【`date -d today +'%Y-%m-%d %H:%M:%S.%3N'`】"
+echo -e "PLS选择固件及模式准备运行...\n"
 
 function print_usage() {
     echo "Usage: ${0} [mode]... [brand] [firmware|firmware_directory]"
@@ -353,8 +355,7 @@ function run_emulation() {
         # 内核HOLD
         echo -e "[\033[32m+\033[0m] 进入内核HOLD模式"
         if [ ! -d "/home/andy/myae/binaries" ]; then
-            mkdir -p /home/andy/myae/binaries
-            chmod -R 777 /home/andy/myae/binaries
+            mkdir -p -m 777 /home/andy/myae/binaries
             mount --bind /opt/myae/binaries /home/andy/myae/binaries
         fi
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`

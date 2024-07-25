@@ -11,42 +11,41 @@ resolve_link() {
 }
 
 if (${FIRMAE_BOOT}); then
-  if [ ! -e /bin/sh ]; then
-      ${BUSYBOX} ln -s /firmadyne/busybox /bin/sh
-  fi
-  ${BUSYBOX} ln -s /firmadyne/busybox /firmadyne/sh
-
-  mkdir -p "$(resolve_link /proc)"
-  mkdir -p "$(resolve_link /dev/pts)"
-  mkdir -p "$(resolve_link /etc_ro)"
-  mkdir -p "$(resolve_link /tmp)"
-  mkdir -p "$(resolve_link /var)"
-  mkdir -p "$(resolve_link /run)"
-  mkdir -p "$(resolve_link /sys)"
-  mkdir -p "$(resolve_link /root)"
-  mkdir -p "$(resolve_link /tmp/var)"
-  mkdir -p "$(resolve_link /tmp/media)"
-  mkdir -p "$(resolve_link /tmp/etc)"
-  mkdir -p "$(resolve_link /tmp/var/run)"
-  mkdir -p "$(resolve_link /tmp/home/root)"
-  mkdir -p "$(resolve_link /tmp/mnt)"
-  mkdir -p "$(resolve_link /tmp/opt)"
-  mkdir -p "$(resolve_link /tmp/www)"
-  mkdir -p "$(resolve_link /var/run)"
-  mkdir -p "$(resolve_link /var/lock)"
-  mkdir -p "$(resolve_link /usr/bin)"
-  mkdir -p "$(resolve_link /usr/sbin)"
-
-  ${BUSYBOX} chmod a+x -R `${BUSYBOX} find / -type d \( -name bin -o -name sbin \)`
-
-  for FILE in `${BUSYBOX} find /bin /sbin /usr/bin /usr/sbin -type f -perm -u+x -exec ${BUSYBOX} strings {} \; | ${BUSYBOX} egrep "^(/var|/etc|/tmp)(.+)\/([^\/]+)$"`
-  do
-    DIR=`${BUSYBOX} dirname "${FILE}"`
-    if (! ${BUSYBOX} echo "${DIR}" | ${BUSYBOX} egrep -q "(%s|%c|%d|/tmp/services)");then
-      ${BUSYBOX} echo "${DIR}" >> /firmadyne/dir_log
-      mkdir -p "$(resolve_link ${DIR})"
+    if [ ! -e /bin/sh ]; then
+        ${BUSYBOX} ln -s /firmadyne/busybox /bin/sh
     fi
-  done
+    ${BUSYBOX} ln -s /firmadyne/busybox /firmadyne/sh
+
+    mkdir -p "$(resolve_link /proc)"
+    mkdir -p "$(resolve_link /dev/pts)"
+    mkdir -p "$(resolve_link /etc_ro)"
+    mkdir -p "$(resolve_link /tmp)"
+    mkdir -p "$(resolve_link /var)"
+    mkdir -p "$(resolve_link /run)"
+    mkdir -p "$(resolve_link /sys)"
+    mkdir -p "$(resolve_link /root)"
+    mkdir -p "$(resolve_link /tmp/var)"
+    mkdir -p "$(resolve_link /tmp/media)"
+    mkdir -p "$(resolve_link /tmp/etc)"
+    mkdir -p "$(resolve_link /tmp/var/run)"
+    mkdir -p "$(resolve_link /tmp/home/root)"
+    mkdir -p "$(resolve_link /tmp/mnt)"
+    mkdir -p "$(resolve_link /tmp/opt)"
+    mkdir -p "$(resolve_link /tmp/www)"
+    mkdir -p "$(resolve_link /var/run)"
+    mkdir -p "$(resolve_link /var/lock)"
+    mkdir -p "$(resolve_link /usr/bin)"
+    mkdir -p "$(resolve_link /usr/sbin)"
+
+    ${BUSYBOX} chmod a+x -R `${BUSYBOX} find / -type d \( -name bin -o -name sbin \)`
+
+    for FILE in `${BUSYBOX} find /bin /sbin /usr/bin /usr/sbin -type f -perm -u+x -exec ${BUSYBOX} strings {} \; | ${BUSYBOX} egrep "^(/var|/etc|/tmp)(.+)\/([^\/]+)$"`; do
+        DIR=`${BUSYBOX} dirname "${FILE}"`
+        if (! ${BUSYBOX} echo "${DIR}" | ${BUSYBOX} egrep -q "(%s|%c|%d|/tmp/services)"); then
+            ${BUSYBOX} echo "${DIR}" >> /firmadyne/dir_log
+            mkdir -p "$(resolve_link ${DIR})"
+        fi
+    done
 fi
 
 # make /etc and add some essential files
@@ -74,9 +73,9 @@ if [ $FILECOUNT -lt "5" ]; then
     echo "Warning: Recreating device nodes!"
 
     if (${FIRMAE_ETC}); then
-      TMP_BUSYBOX="/busybox"
+        TMP_BUSYBOX="/busybox"
     else
-      TMP_BUSYBOX=""
+        TMP_BUSYBOX=""
     fi
 
     ${TMP_BUSYBOX} mknod -m 660 /dev/mem c 1 1
@@ -170,21 +169,21 @@ if [ $FILECOUNT -lt "5" ]; then
 fi
 
 # create a gpio file required for linksys to make the watchdog happy
-if ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
-  ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libcm.so) ||
-  ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libshared.so); then
-    echo "Creating /dev/gpio/in!"
-    if (${FIRMAE_BOOT}); then
-      rm /dev/gpio
-    fi
-    mkdir -p /dev/gpio
-    echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
+if  ($BUSYBOX grep -sq "/dev/gpio/in" /bin/gpio) ||
+    ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libcm.so) ||
+    ($BUSYBOX grep -sq "/dev/gpio/in" /usr/lib/libshared.so); then
+        echo "Creating /dev/gpio/in!"
+        if (${FIRMAE_BOOT}); then
+            rm /dev/gpio
+        fi
+        mkdir -p /dev/gpio
+        echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
 fi
 
 # prevent system from rebooting
 if (${FIRMAE_BOOT}); then
-  echo "Removing /sbin/reboot!"
-  rm -f /sbin/reboot
+    echo "Removing /sbin/reboot!"
+    rm -f /sbin/reboot
 fi
 echo "Removing /etc/scripts/sys_resetbutton!"
 rm -f /etc/scripts/sys_resetbutton

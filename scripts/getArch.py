@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
-import sys
-import tarfile
-import subprocess
-import psycopg2
+import sys, tarfile, subprocess, psycopg2
 
-archMap = {"MIPS64":"mips64", "MIPS":"mips", "ARM64":"arm64", "ARM":"arm", "Intel 80386":"intel", "x86-64":"intel64", "PowerPC":"ppc", "unknown":"unknown"}
 
-endMap = {"LSB":"el", "MSB":"eb"}
+archMap = {
+    "MIPS64"        : "mips64",
+    "MIPS"          : "mips",
+    "ARM64"         : "arm64",
+    "ARM"           : "arm",
+    "Intel 80386"   : "intel",
+    "x86-64"        : "intel64",
+    "PowerPC"       : "ppc",
+    "unknown"       : "unknown",
+}
+
+endMap = {
+    "LSB"           :"el",
+    "MSB"           :"eb",
+}
 
 def getArch(filetype):
     for arch in archMap:
@@ -21,11 +32,11 @@ def getEndian(filetype):
             return endMap[endian]
     return None
 
+
 infile = sys.argv[1]
 psql_ip = sys.argv[2]
 base = infile[infile.rfind("/") + 1:]
 iid = base[:base.find(".")]
-
 tar = tarfile.open(infile, 'r')
 
 infos = []
@@ -44,16 +55,17 @@ with open("scratch/" + iid + "/fileList", "w") as f:
         except:
             continue
 
+
+tmp_t = f"/tmp/{iid}"
 for info in infos:
-    tar.extract(info, path="/tmp/" + iid)
-    filepath = "/tmp/" + iid + "/" + info.name
+    tar.extract(info, path = tmp_t)
+    filepath = f"{tmp_t}/{info.name}"
     filetype = subprocess.check_output(["file", filepath]).decode()
 
     arch = getArch(filetype)
     endian = getEndian(filetype)
     if arch and endian:
         print(arch + endian)
-        subprocess.call(["rm", "-rf", "/tmp/" + iid])
         dbh = psycopg2.connect(database="firmware", user="firmadyne", password="firmadyne", host=psql_ip)
         cur = dbh.cursor()
         query = """UPDATE image SET arch = '%s' WHERE id = %s;"""
@@ -65,4 +77,4 @@ for info in infos:
 
         break
 
-subprocess.call(["rm", "-rf", "/tmp/" + iid])
+subprocess.call(["rm", "-rf", tmp_t])

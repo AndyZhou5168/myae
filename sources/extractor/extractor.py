@@ -496,8 +496,9 @@ class ExtractionItem(object):
         filetype = Extractor.magic(real_path.encode("utf-8", "surrogateescape"))
         if filetype:
             if any(s in filetype for s in ["executable", "universal binary",
-                                           "relocatable", "bytecode", "applet",
-                                           "shared"]):
+                                           "relocatable", "bytecode",
+                                           "applet", "shared",
+                                          ]):
                 self.printf(">> Skipping: %s..." % filetype)
                 return True
 
@@ -538,10 +539,8 @@ class ExtractionItem(object):
 
                         tmp_fd, tmp_path = tempfile.mkstemp(dir=self.temp)
                         os.close(tmp_fd)
-                        Extractor.io_dd(self.item, kernel_offset,
-                                        kernel_size, tmp_path)
-                        kernel = ExtractionItem(self.extractor, tmp_path,
-                                                self.depth, self.tag, self.debug)
+                        Extractor.io_dd(self.item, kernel_offset, kernel_size, tmp_path)
+                        kernel = ExtractionItem(self.extractor, tmp_path, self.depth, self.tag, self.debug)
                         return kernel.extract()
                 # elif "RAMDisk Image" in entry.description:
                 #     self.printf(">>>> %s" % entry.description)
@@ -655,8 +654,7 @@ class ExtractionItem(object):
 
                     self.printf(">>>> Found Linux filesystem in %s!" % unix[1])
                     if self.output:
-                        shutil.make_archive(self.output, "gztar",
-                                            root_dir=unix[1])
+                        shutil.make_archive(self.output, "gztar", root_dir=unix[1])
                     else:
                         self.extractor.do_rootfs = False
                     return True

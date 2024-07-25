@@ -36,9 +36,8 @@ sleep 1
 DEVICE=`get_device`
 
 echo "----Making image directory----"
-if [ ! -e "${IMAGE_DIR}" ]
-then
-        mkdir "${IMAGE_DIR}"
+if [ ! -e "${IMAGE_DIR}" ]; then
+    mkdir "${IMAGE_DIR}"
 fi
 
 echo "----Mounting----"

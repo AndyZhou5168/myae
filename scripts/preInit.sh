@@ -16,4 +16,3 @@ ${BUSYBOX} ln -sf /proc/mounts /etc/mtab
 mkdir -p /dev/pts
 ${BUSYBOX} mount -t devpts devpts /dev/pts
 ${BUSYBOX} mount -t tmpfs tmpfs /run
-

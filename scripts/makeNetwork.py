@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
 import sys
 import getopt
@@ -130,6 +131,7 @@ echo -n "[*]Starting emulation of firmware... "
 echo "Done!"
 """
 
+
 def mountImage(targetDir):
     loopFile = subprocess.check_output(['bash', '-c', 'source myae.config && add_partition %s/image.raw' % targetDir]).decode().strip()
     os.system('mount %s %s/image > /dev/null' % (loopFile, targetDir))
@@ -141,7 +143,7 @@ def umountImage(targetDir, loopFile):
     subprocess.check_output(['bash', '-c', 'source myae.config && del_partition %s' % loopFile.rsplit('p', 1)[0]])
 
 def checkVariable(key):
-    return True if os.environ[key] == 'true' else False
+    return os.environ[key] == 'true'
 
 def stripTimestamps(data):
     lines = data.split(b"\n")
@@ -563,7 +565,6 @@ def inferNetwork(iid, arch, endianness, init):
     umountImage(targetDir, loopFile)
 
     print("Running firmware %d: terminating after %d secs..." % (iid, TIMEOUT))
-
     cmd = "timeout --preserve-status --signal SIGINT {0} ".format(TIMEOUT)
     cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(SCRIPTDIR, arch+endianness, iid, qemuInitValue)
     cmd += " 2>&1 > {}/inferNetwork.log".format(targetDir)

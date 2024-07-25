@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
-import sys
-import os
-import subprocess
+import sys, os, subprocess
 
-IID = -1
+
+kernelPath = None
+scratchPath = None
+scratchKernelCmd = None
 
 def ParseInit(cmd, out):
     for item in cmd.split(' '):
@@ -12,25 +14,28 @@ def ParseInit(cmd, out):
             out.write(item + "\n")
 
 def ParseCmd():
-    if not os.path.exists("scratch/" + IID + "/kernelCmd"):
+    global scratchPath, scratchKernelCmd
+
+    if not os.path.exists(scratchKernelCmd):
         return
-    with open("scratch/" + IID + "/kernelCmd") as f:
-        out = open("scratch/{}/kernelInit".format(IID), "w")
+    with open(scratchKernelCmd) as f, open(scratchPath+"/kernelInit", "w") as out:
         cmds = f.read()
         for cmd in cmds.split('\n')[:-1]:
             ParseInit(cmd, out)
-        out.close()
+
 
 if __name__ == "__main__":
     # execute only if run as a script
     IID = sys.argv[1]
-    kernelPath = './images/' + IID + '.kernel'
+    kernelPath = f"./images/{IID}.kernel"
+    scratchPath = f"scratch/{IID}"
+    scratchKernelCmd = f"scratch/{IID}/kernelCmd"
 
-    tmpstr = "strings {} | grep \"Linux version\" > {}".format(kernelPath, "scratch/"+IID+"/kernelVersion")
+    tmpstr = "strings {} | grep \"Linux version\" > {}".format(kernelPath, scratchPath+"/kernelVersion")
     print("执行的命令=> {}".format(tmpstr))
     os.system(tmpstr)
 
-    tmpstr = "strings {} | grep \"init=/\" | sed -e 's/^\"//' -e 's/\"$//' > {}".format(kernelPath, "scratch/"+IID+"/kernelCmd")
+    tmpstr = "strings {} | grep \"init=/\" | sed -e 's/^\"//' -e 's/\"$//' > {}".format(kernelPath, scratchKernelCmd)
     print("执行的命令=> {}".format(tmpstr))
     os.system(tmpstr)
 

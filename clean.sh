@@ -17,11 +17,18 @@ tables=(
 )
 MYAEPATHPREFIX=/home/andy/myae
 
-rm -fr /opt/myae/scratch
-rm -fr /opt/myae/images
-find /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I [] rm []
-rm -fr /var/tmp/18ce86af.sh
-rm -fr /var/tmp/f8fe6ef5.sh
+if [ -d "$MYAEPATHPREFIX/data/myae_scratch" ]; then
+    umount -qln "$MYAEPATHPREFIX/data/myae_scratch"
+fi
+if [ -d "$MYAEPATHPREFIX/data/myae_images" ]; then
+    umount -qln "$MYAEPATHPREFIX/data/myae_images"
+fi
+if [ -d "$MYAEPATHPREFIX/binaries" ]; then
+    umount -qln "$MYAEPATHPREFIX/binaries"
+fi
+
+myfind /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I [] rm []
+rm -fr /var/tmp/*.mysh
 rm -fr /var/tmp/ae-lock
 rm -fr /tmp/qemu.*
 
@@ -30,18 +37,10 @@ for table in "${tables[@]}"; do
     psql -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -U "$PGUSER" -c "truncate table $table cascade;"
 done
 
-if [ -d "$MYAEPATHPREFIX/data/myae_scratch" ]; then
-    umount "$MYAEPATHPREFIX/data/myae_scratch"
-    sleep 2
-    rm -fr "$MYAEPATHPREFIX/data/myae_scratch"
-fi
-if [ -d "$MYAEPATHPREFIX/data/myae_images" ]; then
-    umount "$MYAEPATHPREFIX/data/myae_images"
-    sleep 2
-    rm -fr "$MYAEPATHPREFIX/data/myae_images"
-fi
-if [ -d "$MYAEPATHPREFIX/binaries" ]; then
-    umount "$MYAEPATHPREFIX/binaries"
-    sleep 2
-    rm -fr "$MYAEPATHPREFIX/binaries"
-fi
+rm -fr "$MYAEPATHPREFIX/data/myae_scratch"
+rm -fr "$MYAEPATHPREFIX/data/myae_images"
+rm -fr "$MYAEPATHPREFIX/binaries"
+sleep 3
+
+rm -fr /opt/myae/scratch
+rm -fr /opt/myae/images

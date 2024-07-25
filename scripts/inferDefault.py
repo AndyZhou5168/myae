@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+#coding=utf-8
 
-import sys
-import os
-import subprocess
+import sys, os, subprocess
+
 
 def GetKeyList(IID):
     keyList = []
@@ -24,6 +24,7 @@ def GetKeyList(IID):
                 keyList.append(key)
     return keyList
 
+
 def GetDefaultFiles(keyList):
     default_list = []
     for dir_name, dir_list, file_list in os.walk('./scratch/{}/image'.format(IID)):
@@ -31,18 +32,20 @@ def GetDefaultFiles(keyList):
             continue
 
         for file_name in file_list:
+            tmp_full_fn = f"{dir_name}/{file_name}"
             count = 0
-            if not os.path.isfile(dir_name + '/' + file_name):
+            if not os.path.isfile(tmp_full_fn):
                 continue
-            data = open(dir_name + '/' + file_name, 'rb').read()
+            data = open(tmp_full_fn, 'rb').read()
             for key in keyList:
                 if data.find(key) != -1:
                     count += 1
             # TODO: adjust approximate value
             # TODO: need to save the start index of the nvram data to parsing from the binary
             if count > len(keyList) // 2:
-                default_list.append((dir_name + '/' + file_name, count))
+                default_list.append((tmp_full_fn, count))
     return default_list
+
 
 def Log(default_list):
     # logging found nvram keys
@@ -66,8 +69,10 @@ def Log(default_list):
 if __name__ == "__main__":
     # execute only if run as a script
     IID = sys.argv[1]
+
     keyList = GetKeyList(IID)
     if len(keyList) < 10:
         exit(0)
+
     defaultList = GetDefaultFiles(keyList)
     Log(defaultList)

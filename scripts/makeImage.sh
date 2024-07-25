@@ -82,19 +82,19 @@ cp $(which busybox) "${IMAGE_DIR}"
 cp $(which bash-static) "${IMAGE_DIR}"
 echo "----Finding Init (chroot)----"
 if [ -e "${WORK_DIR}/kernelInit" ]; then
-  cp "${WORK_DIR}/kernelInit" "${IMAGE_DIR}"
+    cp "${WORK_DIR}/kernelInit" "${IMAGE_DIR}"
 fi
 cp "${SCRIPT_DIR}/inferFile.sh" "${IMAGE_DIR}"
 FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} chroot "${IMAGE_DIR}" /bash-static /inferFile.sh
 rm "${IMAGE_DIR}/bash-static"
 rm "${IMAGE_DIR}/inferFile.sh"
 if [ -e "${IMAGE_DIR}/kernelInit" ]; then
-  rm "${IMAGE_DIR}/kernelInit"
+    rm "${IMAGE_DIR}/kernelInit"
 fi
 
 mv ${IMAGE_DIR}/firmadyne/init ${WORK_DIR}
 if [ -e ${IMAGE_DIR}/firmadyne/service ]; then
-  cp ${IMAGE_DIR}/firmadyne/service ${WORK_DIR}
+    cp ${IMAGE_DIR}/firmadyne/service ${WORK_DIR}
 fi
 
 echo "----Patching Filesystem (chroot)----"
@@ -104,8 +104,7 @@ rm "${IMAGE_DIR}/fixImage.sh"
 rm "${IMAGE_DIR}/busybox"
 
 echo "----Setting up FIRMADYNE----"
-for BINARY_NAME in "${BINARIES[@]}"
-do
+for BINARY_NAME in "${BINARIES[@]}"; do
     BINARY_PATH=`get_binary ${BINARY_NAME} ${ARCH}`
     cp "${BINARY_PATH}" "${IMAGE_DIR}/firmadyne/${BINARY_NAME}"
     chmod a+x "${IMAGE_DIR}/firmadyne/${BINARY_NAME}"
@@ -128,10 +127,10 @@ touch "${IMAGE_DIR}/firmadyne/debug.sh"
 chmod a+x "${IMAGE_DIR}/firmadyne/debug.sh"
 
 if (! ${FIRMAE_ETC}); then
-  sed -i 's/sleep 60/sleep 15/g' "${IMAGE_DIR}/firmadyne/network.sh"
-  sed -i 's/sleep 120/sleep 30/g' "${IMAGE_DIR}/firmadyne/run_service.sh"
-  sed -i 's@/firmadyne/sh@/bin/sh@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
-  sed -i 's@BUSYBOX=/firmadyne/busybox@BUSYBOX=@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
+    sed -i 's/sleep 60/sleep 15/g' "${IMAGE_DIR}/firmadyne/network.sh"
+    sed -i 's/sleep 120/sleep 30/g' "${IMAGE_DIR}/firmadyne/run_service.sh"
+    sed -i 's@/firmadyne/sh@/bin/sh@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
+    sed -i 's@BUSYBOX=/firmadyne/busybox@BUSYBOX=@g' ${IMAGE_DIR}/firmadyne/{preInit.sh,network.sh,run_service.sh}
 fi
 
 echo "----Unmounting QEMU Image----"
