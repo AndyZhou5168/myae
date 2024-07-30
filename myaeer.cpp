@@ -60,8 +60,8 @@ void get_rand_str(char s[], int num) {
     const int lstr(strlen(str));
 
     memset(s, 0, num);
-    srand((unsigned int)time((time_t *)NULL));
-    s[num -7] = s[0] = '\"';
+    srand((unsigned int)time(NULL));
+    s[num-7] = s[0] = '\"';
     strncpy(s+num-6, ".mysh", 5);
 
     for(int i=1; i<num-7; i++) {

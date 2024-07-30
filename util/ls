@@ -18,9 +18,9 @@ done
 
 params=("$@")
 if [ $IS_HIDE -eq 1 ]; then
-    RESULT=`myls "${params[@]}" | grep -v myae`
+    RESULT=`myls "${params[@]}" | grep -v myae |grep -v mysh`
 else
-    RESULT=`myls "${params[@]}"`
+    RESULT=`myls "${params[@]}" |grep -v mysh`
 fi
 
 echo "$RESULT"

@@ -32,6 +32,10 @@ else
 fi
 add_cpenv QEMU_NETWORK
 
+export BB_DISTANCE_ENV_VAR=/tmp/bxk_fuzz/distances.txt; add_cpenv BB_DISTANCE_ENV_VAR
+export TARGETS_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt; add_cpenv TARGETS_ENV_VAR
+export UAF_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt_uaf; add_cpenv UAF_ENV_VAR
+
 print_cpenv
 QEMU_AUDIO_DRV=none qemu-system-arm -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} \
 -drive if=none,file=${IMAGE},format=raw,id=rootfs \

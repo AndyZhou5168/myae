@@ -21,7 +21,7 @@ def andycaller(func):
 
 
 class Andylog(Singleton):
-    def __init__(self, name='/home/andy/myae/logs/papi.log'):
+    def __init__(self, name=''):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('[%(asctime)s] [pid:%(process)d:%(threadName)s] [%(name)s:%(levelname)s]::%(message)s')

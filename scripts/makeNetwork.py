@@ -106,8 +106,12 @@ add_cpenv FIRMAE_NVRAM
 add_cpenv FIRMAE_KERNEL
 add_cpenv FIRMAE_ETC
 
+export BB_DISTANCE_ENV_VAR=/tmp/bxk_fuzz/distances.txt; add_cpenv BB_DISTANCE_ENV_VAR
+export TARGETS_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt; add_cpenv TARGETS_ENV_VAR
+export UAF_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt_uaf; add_cpenv UAF_ENV_VAR
+
 print_cpenv
-echo -n "[*]Starting emulation of firmware... "
+echo "[*]Starting emulation of firmware... "
 %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} %(QEMU_DISK)s \\
 -append "root=${QEMU_ROOTFS} "\\
 "console=ttyS0 "\\

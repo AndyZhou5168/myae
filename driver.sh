@@ -83,7 +83,6 @@ set -e
 set -u
 set +x
 source ./myae.config
-reg_engine_toweb $PPID
 
 function get_option() {
     OPTION=${1}
@@ -186,6 +185,7 @@ function run_emulation() {
         echo -e "[\033[31m-\033[0m] extractor.py failed!"
         return
     fi
+    reg_engine_toweb "$IID@$$"
 
     # ================================
     # extract kernel from firmware
@@ -366,7 +366,7 @@ function run_emulation() {
     fi
 
     echo "=====执行完成====="
-    rm -fr "/var/tmp/f8fe6ef5.sh"
+    rm -fr /var/tmp/*.mysh
 }
 
 if [ $# -eq 3 ]; then
