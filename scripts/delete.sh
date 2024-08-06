@@ -21,7 +21,7 @@ echo "checking the process table for a running qemu instance ..."
 PID=`ps -ef | grep qemu | grep "${IID}" | grep -v grep | awk '{print $2}'`
 if ! [ -z $PID ]; then
     echo "killing process ${PID}"
-    sudo kill -9 ${PID}
+    sudo kill -KILL ${PID}
 fi
 
 PID1=`ps -ef | grep "${IID}\/run.sh" | grep -v grep | awk '{print $2}'`
@@ -43,7 +43,8 @@ done
 
 #Cleanup database:
 echo "Remove the database entries ..."
-psql -d firmware -U firmadyne -h $PSQL_IP -t -q -c "DELETE from image WHERE id=${IID};"
+export PGPASSWORD="firmadyne"
+psql -d firmware -U firmadyne -h $PSQL_IP -t -q -c "delete from image where id=${IID};"
 
 #Cleanup filesystem:
 echo "Clean up the file system ..."

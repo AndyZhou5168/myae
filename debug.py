@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 #coding=utf-8
 
-import sys, os.path
-import subprocess, signal, time
+import sys, os.path, subprocess, signal, time
 from socket import *
 
 version_info = sys.version_info
@@ -88,15 +87,15 @@ class firmae_helper():
 
     def file_transfer(self, target_filepath):
         file_name = os.path.basename(target_filepath)
-        self.send('/firmadyne/busybox nc -lp 31339 > /firmadyne/%s &\n' %file_name)
-        time.sleep(1)
-        os.system('cat ' + target_filepath + ' | nc ' + self.targetIP + ' 31339 &')
+        self.send(f"/firmadyne/busybox nc -lp 31339 > /opt/{file_name} &\n")
+        time.sleep(1.0)
+        os.system(f"cat {target_filepath} | nc {self.targetIP} 31339 &")
         while True:
             if self.sendrecv('ps\n').find('31339') != -1:
-                time.sleep(1)
+                time.sleep(1.0)
             else:
                 break
-        print('[*] transfer complete!')
+        print(f'[*] transfer {file_name} to guest:/opt complete!')
 
     def run_gdbserver(self, PID, PORT=5168):
         print('[+] gdbserver at %s:%d attach on %s' %(self.targetIP, PORT, PID))
@@ -161,7 +160,7 @@ if __name__ == '__main__':
         elif select == 1:
             fh.show_processlist()
             try:
-                PID = input('[+] target pid: ')
+                PID = input('[+] 输入待调试进程ID:')
             except KeyboardInterrupt:
                 pass
             else:
@@ -170,7 +169,7 @@ if __name__ == '__main__':
                     continue
                 fh.run_gdbserver(PID)
         elif select == 4:
-            target_filepath = input('[+] target file path : ')
+            target_filepath = input('[+] 输入待上传固件的全路径完整文件名: ')
             fh.file_transfer(target_filepath)
         elif select == 5:
             break

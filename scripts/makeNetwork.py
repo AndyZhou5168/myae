@@ -36,7 +36,7 @@ else
     exit 1
 fi
 
-RUN_MODE=`basename ${0}`
+RUN_MODE=${0}; RUN_MODE=`basename ${RUN_MODE:0:-3}`
 
 IMAGE=`get_fs ${IID}`
 if (echo ${ARCHEND} | grep -q "mips" && echo ${RUN_MODE} | grep -q "debug"); then
@@ -72,6 +72,8 @@ echo "%(NET_INTERFACE)s" > ${WORK_DIR}/image/firmadyne/net_interface
 echo "#!/firmadyne/sh" > ${WORK_DIR}/image/firmadyne/debug.sh
 if (echo ${RUN_MODE} | grep -q "debug"); then
     echo "while (true); do /firmadyne/busybox nc -lp 31337 -e /firmadyne/sh; done &" >> ${WORK_DIR}/image/firmadyne/debug.sh
+fi
+if (echo ${RUN_MODE} | grep -q "debug") || (echo ${RUN_MODE} | grep -wq "run") && (echo ${ARCHEND} | grep -q "arm"); then
     echo "/firmadyne/busybox telnetd -p 31338 -l /firmadyne/sh" >> ${WORK_DIR}/image/firmadyne/debug.sh
 fi
 chmod a+x ${WORK_DIR}/image/firmadyne/debug.sh
@@ -106,9 +108,11 @@ add_cpenv FIRMAE_NVRAM
 add_cpenv FIRMAE_KERNEL
 add_cpenv FIRMAE_ETC
 
-export BB_DISTANCE_ENV_VAR=/tmp/bxk_fuzz/distances.txt; add_cpenv BB_DISTANCE_ENV_VAR
-export TARGETS_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt; add_cpenv TARGETS_ENV_VAR
-export UAF_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt_uaf; add_cpenv UAF_ENV_VAR
+if (echo ${RUN_MODE} | grep -wq "run"); then
+    export BB_DISTANCE_ENV_VAR=/tmp/bxk_fuzz/distances.txt; add_cpenv BB_DISTANCE_ENV_VAR
+    export TARGETS_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt; add_cpenv TARGETS_ENV_VAR
+    export UAF_ENV_VAR=/tmp/bxk_fuzz/httpd.tgt_uaf; add_cpenv UAF_ENV_VAR
+fi
 
 print_cpenv
 echo "[*]Starting emulation of firmware... "
@@ -128,6 +132,7 @@ echo "[*]Starting emulation of firmware... "
 -monitor unix:/tmp/qemu.${IID},server,nowait \\
 -d unimp,guest_errors \\
 -display none \\
+-rtc base=utc \\
 %(QEMU_NETWORK)s | true
 
 %(STOP_NET)s
@@ -137,14 +142,14 @@ echo "Done!"
 
 
 def mountImage(targetDir):
-    loopFile = subprocess.check_output(['bash', '-c', 'source myae.config && add_partition %s/image.raw' % targetDir]).decode().strip()
-    os.system('mount %s %s/image > /dev/null' % (loopFile, targetDir))
+    loopFile = subprocess.check_output(['bash', '-c', 'source myae.config && add_partition %s/image.raw' %targetDir]).decode().strip()
+    os.system('mount %s %s/image > /dev/null' %(loopFile, targetDir))
     time.sleep(1)
     return loopFile
 
 def umountImage(targetDir, loopFile):
-    os.system('umount %s/image > /dev/null' % targetDir)
-    subprocess.check_output(['bash', '-c', 'source myae.config && del_partition %s' % loopFile.rsplit('p', 1)[0]])
+    os.system('umount %s/image > /dev/null' %targetDir)
+    subprocess.check_output(['bash', '-c', 'source myae.config && del_partition %s' %loopFile.rsplit('p', 1)[0]])
 
 def checkVariable(key):
     return os.environ[key] == 'true'
@@ -268,11 +273,11 @@ def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
     device = "virtio-net-device" if arch == "arm" else "e1000"
 
     if not n:
-        return "-device %(DEVICE)s,netdev=net%(I)i -netdev socket,id=net%(I)i,listen=:200%(I)i" % {'DEVICE': device, 'I': i}
+        return "-device %(DEVICE)s,netdev=net%(I)i -netdev socket,id=net%(I)i,listen=:200%(I)i" %{'DEVICE': device, 'I': i}
     else:
         (ip, dev, vlan, mac, brif) = n
         vlan_id = vlan if vlan else i
-        mac_str = "" if not mac else ",macaddr=%s" % mac
+        mac_str = "" if not mac else ",macaddr=%s" %mac
         if isUserNetwork: # user network dhcp server
             # TODO: get port list (inet_bind)
             # TODO: maybe need reverse ping checker
@@ -282,11 +287,11 @@ def qemuArchNetworkConfig(i, tap_num, arch, n, isUserNetwork, ports):
             for (proto, ip, port) in ports:
                 if port in [80, 443]:
                     continue
-                portfwd += "hostfwd=%(TYPE)s::%(PORT)i-:%(PORT)i," % {"TYPE" : proto, "PORT" : port}
+                portfwd += "hostfwd=%(TYPE)s::%(PORT)i-:%(PORT)i," %{"TYPE" : proto, "PORT" : port}
 
-            return "-device %(DEVICE)s,netdev=net%(I)i -netdev user,id=net%(I)i,%(FWD)s" % {'DEVICE': device, 'I': i, "FWD": portfwd[:-1]}
+            return "-device %(DEVICE)s,netdev=net%(I)i -netdev user,id=net%(I)i,%(FWD)s" %{'DEVICE': device, 'I': i, "FWD": portfwd[:-1]}
         else:
-            return "-device %(DEVICE)s,netdev=net%(I)i -netdev tap,id=net%(I)i,ifname=${TAPDEV_%(TAP_NUM)i},script=no" % { 'I' : i, 'DEVICE' : device, 'TAP_NUM' : tap_num}
+            return "-device %(DEVICE)s,netdev=net%(I)i -netdev tap,id=net%(I)i,ifname=${TAPDEV_%(TAP_NUM)i},script=no" %{ 'I' : i, 'DEVICE' : device, 'TAP_NUM' : tap_num}
 
 def qemuNetworkConfig(arch, network, isUserNetwork, ports):
     output = []
@@ -520,42 +525,43 @@ def readWithException(filePath):
 
 
 def inferNetwork(iid, arch, endianness, init):
-    global SCRIPTDIR
-    global SCRATCHDIR
+    global SCRIPTDIR, SCRATCHDIR
     TIMEOUT = int(os.environ['TIMEOUT'])
-    targetDir = SCRATCHDIR + '/' + str(iid)
+    targetDir = f"{SCRATCHDIR}/{iid}"
+    watchDir = f"/home/andy/myae/logs"
 
     loopFile = mountImage(targetDir)
 
     fileType = subprocess.check_output(["file", "-b", "%s/image/%s" % (targetDir, init)]).decode().strip()
-    print("%s=> Infer test: %s (%s)" %(MYSELFNAME, init, fileType))
+    print("%s=> Infer test: (%s), (%s)" %(MYSELFNAME, init, fileType))
 
-    with open(targetDir + '/image/firmadyne/network_type', 'w') as out:
+    with open(f"{targetDir}/image/firmadyne/network_type", 'w') as out:
         out.write("None")
 
     qemuInitValue = 'rdinit=/firmadyne/preInit.sh'
-    if os.path.exists(targetDir + '/service'):
-        webService = open(targetDir + '/service').read().strip()
+    if os.path.exists(f"{targetDir}/service"):
+        webService = open(f"{targetDir}/service").read().strip()
     else:
         webService = None
-    print("[*] web service: %s" % webService)
+    print(f"[*] web service: {webService}")
+
     targetFile = ''
     targetData = ''
     out = None
     if not init.endswith('preInit.sh'): # rcS, preinit
         if fileType.find('ELF') == -1 and fileType.find("symbolic link") == -1: # maybe script
-            targetFile = targetDir + '/image/' + init
+            targetFile = f"{targetDir}/image/{init}"
             targetData = readWithException(targetFile)
             out = open(targetFile, 'a')
         # netgear R6200
         elif fileType.find('ELF') != -1 or fileType.find("symbolic link") != -1:
             qemuInitValue = qemuInitValue[2:] # remove 'rd'
-            targetFile = targetDir + '/image/firmadyne/preInit.sh'
+            targetFile = f"{targetDir}/image/firmadyne/preInit.sh"
             targetData = readWithException(targetFile)
             out = open(targetFile, 'a')
             out.write(init + ' &\n')
     else: # preInit.sh
-        out = open(targetDir + '/image/firmadyne/preInit.sh', 'a')
+        out = open(f"{targetDir}/image/firmadyne/preInit.sh", 'a')
 
     if out:
         out.write('\n/firmadyne/network.sh &\n')
@@ -568,8 +574,8 @@ def inferNetwork(iid, arch, endianness, init):
 
     umountImage(targetDir, loopFile)
 
-    print("Running firmware %d: terminating after %d secs..." % (iid, TIMEOUT))
-    cmd = "timeout --preserve-status --signal SIGINT {0} ".format(TIMEOUT)
+    print(f"Running firmware {iid}: terminating after {TIMEOUT} secs...")
+    cmd = f"timeout --preserve-status --signal SIGINT {TIMEOUT} "
     cmd += "{0}/run.{1}.sh \"{2}\" \"{3}\" ".format(SCRIPTDIR, arch+endianness, iid, qemuInitValue)
     cmd += " 2>&1 > {}/inferNetwork.log".format(targetDir)
     print("{0}=> 执行的命令: {1}".format(MYSELFNAME, cmd))
@@ -581,7 +587,7 @@ def inferNetwork(iid, arch, endianness, init):
         os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
     umountImage(targetDir, loopFile)
 
-    data = open("%s/qemu.initial.serial.log" % targetDir, 'rb').read()
+    data = open(f"{targetDir}/qemu.initial.serial.log", 'rb').read()
 
     ports = findPorts(data, endianness)
 
@@ -589,9 +595,11 @@ def inferNetwork(iid, arch, endianness, init):
     ifacesWithIps = findNonLoInterfaces(data, endianness)
     #find changes of mac addresses for devices
     macChanges = findMacChanges(data, endianness)
-    print('[*] Interfaces: %r' % ifacesWithIps)
+    print('[*] Interfaces: %r' %ifacesWithIps)
 
     networkList = getNetworkList(data, ifacesWithIps, macChanges)
+    os.system(f"cat {targetDir}/qemu.initial.serial.log > {watchDir}/qemu.log")
+
     return qemuInitValue, networkList, targetFile, targetData, ports
 
 
@@ -674,20 +682,18 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
     success = False
     MYFUNCNAME = sys._getframe().f_code.co_name
 
-    global SCRIPTDIR
-    global SCRATCHDIR
+    global SCRIPTDIR, SCRATCHDIR
+    scratchdir_iid = f"{SCRATCHDIR}/{iid}"
 
-    for init in open(SCRATCHDIR + "/" + str(iid) + "/init").read().split('\n')[:-1]:
-        with open(SCRATCHDIR + "/" + str(iid) + "/current_init", 'w') as out:
+    for init in open(f"{scratchdir_iid}/init").read().split('\n')[:-1]:
+        with open(f"{scratchdir_iid}/current_init", 'w') as out:
             out.write(init)
         qemuInitValue, networkList, targetFile, targetData, ports = inferNetwork(iid, arch, endianness, init)
-        print("%s=> init=[%s], ports: %r" %(MYSELFNAME, init, ports))
+        print("inferNetwork rlt1=> init:[%s], qemuInitValue:[%s], ports:[%r], networkInfo:[\n%r\n], targetFile:[%s], targetData:[\n%s\n]" %(init, qemuInitValue, ports, networkList, targetFile, targetData))
         # check network interfaces and add script in the file system
         # return the fixed network interface
-        print("%s=> init=[%s], networkInfo: %r" %(MYSELFNAME, init, networkList))
         filterNetworkList, network_type = checkNetwork(networkList)
-
-        print("%s=> init=[%s], filter network info: %r" %(MYSELFNAME, init, filterNetworkList))
+        print("inferNetwork rlt2=> init=[%s], filter networkInfo:[\n%r\n]" %(init, filterNetworkList))
 
         # filter ip
         # some firmware uses multiple network interfaces for one bridge
@@ -702,15 +708,15 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
         if filterNetworkList:
             ips = [ip for (ip, dev, vlan, mac, brif) in filterNetworkList]
             ips = set(ips)
-            with open(SCRATCHDIR + "/" + str(iid) + "/ip_num", 'w') as out:
+            with open(f"{scratchdir_iid}/ip_num", 'w') as out:
                 out.write(str(len(ips)))
 
             for idx, ip in enumerate(ips):
-                with open(SCRATCHDIR + "/" + str(iid) + "/ip." + str(idx), 'w') as out:
+                with open(f"{scratchdir_iid}/ip.{idx}", 'w') as out:
                     out.write(str(ip))
 
             isUserNetwork = any(isDhcpIp(ip) for ip in ips)
-            with open(SCRATCHDIR + "/" + str(iid) + "/isDhcp", "w") as out:
+            with open(f"{scratchdir_iid}/isDhcp", "w") as out:
                 out.write("true" if isUserNetwork else "false")
 
             qemuCommandLine = qemuCmd(iid,
@@ -727,15 +733,14 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
             os.chmod(outfile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
             os.system('./scripts/test_emulation.sh {} {}'.format(iid, arch+endianness))
-            if (os.path.exists(SCRATCHDIR + '/' + str(iid) + '/web') and
-                open(SCRATCHDIR + '/' + str(iid) + '/web').read().strip() == 'true'):
+            if (os.path.exists(f"{scratchdir_iid}/web") and open(f"{scratchdir_iid}/web").read().strip()=='true'):
                 success = True
                 break
 
         # restore infer network data
         # targetData is '' when init is preInit.sh
         if targetData != '':
-            targetDir = SCRATCHDIR + '/' + str(iid)
+            targetDir = scratchdir_iid
             loopFile = mountImage(targetDir)
             with open(targetFile, 'w') as out:
                 out.write(targetData)

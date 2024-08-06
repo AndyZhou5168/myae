@@ -77,6 +77,7 @@ echo "----Creating FIRMADYNE Directories----"
 mkdir "${IMAGE_DIR}/firmadyne/"
 mkdir "${IMAGE_DIR}/firmadyne/libnvram/"
 mkdir "${IMAGE_DIR}/firmadyne/libnvram.override/"
+mkdir "${IMAGE_DIR}/opt/"
 
 cp $(which busybox) "${IMAGE_DIR}"
 cp $(which bash-static) "${IMAGE_DIR}"
@@ -113,6 +114,9 @@ mknod -m 666 "${IMAGE_DIR}/firmadyne/ttyS1" c 4 65
 
 cp "${SCRIPT_DIR}/preInit.sh" "${IMAGE_DIR}/firmadyne/preInit.sh"
 chmod a+x "${IMAGE_DIR}/firmadyne/preInit.sh"
+
+cp "${SCRIPT_DIR}/watch_arm_core.sh" "${IMAGE_DIR}/firmadyne/watch_arm_core.sh"
+chmod a+x "${IMAGE_DIR}/firmadyne/watch_arm_core.sh"
 
 cp "${SCRIPT_DIR}/network.sh" "${IMAGE_DIR}/firmadyne/network.sh"
 chmod a+x "${IMAGE_DIR}/firmadyne/network.sh"

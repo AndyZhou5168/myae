@@ -47,7 +47,7 @@ function select_mode() {
         FIRM_SELECT=${FIRMWARE_LIST[$FIRM_SELECT]}
         echo "选择的固件=> $FIRM_SELECT"
     else
-        echo "无效输入：$FIRM_SELECT"
+        echo "无效输入，程序退出"
         exit 1
     fi
 
@@ -66,23 +66,25 @@ function select_mode() {
         echo -e "选择的模式=> ${TMP:5}\n"
         MODE_SELECT="${MODE_EXEC[$MODE_SELECT]}"
     else
-        echo "无效输入：$MODE_SELECT"
+        echo "无效输入，程序退出"
         exit 1
     fi
 }
 
+set -e
+set -u
+set +x
 cd /opt/myae
+source ./myae.config
+base_params_init
+echo -e "基准参数=> $FIRMAE_BOOT, $FIRMAE_NET, $FIRMAE_NVRAM, $FIRMAE_KERNEL, $FIRMAE_ETC, $MYAE_ASLR, $TIMEOUT, $CHECK_TIMEOUT"
+
 if [ $# -ne 3 ]; then
     #print_usage ${0}
     select_mode
 else
     echo -e "输入参数: 【$@】\n"
 fi
-
-set -e
-set -u
-set +x
-source ./myae.config
 
 function get_option() {
     OPTION=${1}
@@ -355,8 +357,8 @@ function run_emulation() {
         # 内核HOLD
         echo -e "[\033[32m+\033[0m] 进入内核HOLD模式"
         if [ ! -d "/home/andy/myae/binaries" ]; then
-            mkdir -p -m 777 /home/andy/myae/binaries
-            mount --bind /opt/myae/binaries /home/andy/myae/binaries
+            mkdir -p -m 777 "$MYAEP1PREFIX/binaries"
+            mount --bind "$MYAEP2PREFIX/binaries" "$MYAEP1PREFIX/binaries"
         fi
         BOOT_KERNEL_PATH=`get_boot_kernel ${ARCH} true`
         BOOT_KERNEL=./binaries/`basename ${BOOT_KERNEL_PATH}`
