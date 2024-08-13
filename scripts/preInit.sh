@@ -1,6 +1,7 @@
 #!/firmadyne/sh
 
 BUSYBOX=/firmadyne/busybox
+${BUSYBOX} echo -e `date +'%Y-%m-%d %H:%M:%S'`" $0 begin..." >> /opt/service.out
 
 [ -d /dev ] || mkdir -p /dev
 [ -d /root ] || mkdir -p /root
@@ -16,3 +17,4 @@ ${BUSYBOX} ln -sf /proc/mounts /etc/mtab
 mkdir -p /dev/pts
 ${BUSYBOX} mount -t devpts devpts /dev/pts
 ${BUSYBOX} mount -t tmpfs tmpfs /run
+${BUSYBOX} echo -e `date +'%Y-%m-%d %H:%M:%S'`" $0 end\n" >> /opt/service.out

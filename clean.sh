@@ -38,7 +38,7 @@ if [ -d "$MYAE_BINARYS" ]; then
     umount -qln "$MYAE_BINARYS"
 fi
 
-#myfind /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I [] rm []
+#myfind /opt "/home/$LOGUSER/myae" -type f -name 'andygood.log' | xargs -I @ rm -fr @
 rm -fr /var/tmp/*.mysh
 rm -fr /var/tmp/ae-lock
 rm -fr /tmp/qemu.*
@@ -51,3 +51,5 @@ done
 rm -fr "$MYAE_SCRATCH" "$MYAE_IMAGES" "$MYAE_BINARYS"
 sleep 2
 rm -fr "$MYAEP2PREFIX/scratch" "$MYAEP2PREFIX/images"
+
+#supervisorctl clear all

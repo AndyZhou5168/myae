@@ -132,7 +132,7 @@ echo "[*]Starting emulation of firmware... "
 -monitor unix:/tmp/qemu.${IID},server,nowait \\
 -d unimp,guest_errors \\
 -display none \\
--rtc base=utc \\
+-rtc base=localtime,clock=host \\
 %(QEMU_NETWORK)s | true
 
 %(STOP_NET)s
@@ -364,7 +364,7 @@ sudo tunctl -t ${TAPDEV_%(I)i} -u ${USER}
 
     if checkVariable("FIRMAE_NET"):
         template_vlan = """
-echo "FIRMAE_NET(True)=> Initializing VLAN..."
+echo "MYAE_NET(True)=> Initializing VLAN..."
 HOSTNETDEV_%(I)i=${TAPDEV_%(I)i}.%(VLANID)i
 sudo ip link add link ${TAPDEV_%(I)i} name ${HOSTNETDEV_%(I)i} type vlan id %(VLANID)i
 sudo ip link set ${TAPDEV_%(I)i} up
@@ -377,7 +377,7 @@ sudo ip addr add %(HOSTIP)s/24 dev ${HOSTNETDEV_%(I)i}
 """
     else:
         template_vlan = """
-echo "FIRMAE_NET(False)=> Initializing VLAN..."
+echo "MYAE_NET(False)=> Initializing VLAN..."
 HOSTNETDEV_%(I)i=${TAPDEV_%(I)i}.%(VLANID)i
 sudo ip link add link ${TAPDEV_%(I)i} name ${HOSTNETDEV_%(I)i} type vlan id %(VLANID)i
 sudo ip link set ${HOSTNETDEV_%(I)i} up

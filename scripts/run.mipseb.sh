@@ -50,4 +50,5 @@ qemu-system-mips -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} \
 -serial unix:/tmp/qemu.${IID}.S1,server,nowait \
 -monitor unix:/tmp/qemu.${IID},server,nowait \
 -d unimp,guest_errors \
+-rtc base=localtime,clock=host \
 -display none ${QEMU_NETWORK}

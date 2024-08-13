@@ -1,6 +1,7 @@
 #!/firmadyne/sh
 
 BUSYBOX=/firmadyne/busybox
+${BUSYBOX} echo -e `date +'%Y-%m-%d %H:%M:%S'`" $0 begin..." >> /opt/service.out
 ACTION=`${BUSYBOX} cat /firmadyne/network_type`
 
 if (${FIRMAE_NET}); then
@@ -69,3 +70,4 @@ if (${FIRMAE_NET}); then
         ${BUSYBOX} sleep 5
     done
 fi
+${BUSYBOX} echo -e `date +'%Y-%m-%d %H:%M:%S'`" $0 end\n" >> /opt/service.out

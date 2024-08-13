@@ -51,4 +51,5 @@ QEMU_AUDIO_DRV=none qemu-system-arm -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} 
 -serial unix:/tmp/qemu.${IID}.S1,server,nowait \
 -monitor unix:/tmp/qemu.${IID},server,nowait \
 -d unimp,guest_errors \
+-rtc base=localtime,clock=host \
 -display none ${QEMU_NETWORK}

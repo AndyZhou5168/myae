@@ -24,7 +24,6 @@ penv = {
                             '/home/andy/myae/logs/qemu.log',
                           ],
     'emit_key'          : 'eng-emit-msg',
-    'filter_set'        : set(),
     'pattern'           : re.compile(r".\s{0,3}\d{1,3}\.\d{5,8}.|firmadyne:"),
     'msg_len_valve'     : 100000,
     'watch_qemu_log'    : True,
@@ -67,21 +66,9 @@ class FileChangeHandler(FileSystemEventHandler):
 
     def __diff_watch_file(self):
         new_content = []
-        with open(self.file_path, 'rb') as f:
-            f.seek(0, os.SEEK_END)
-            cur_pos = f.tell()
-            if cur_pos <= self.pre_pos:
-                self.pre_pos = 0
-            if cur_pos > 0:
-                read_cnt = cur_pos - self.pre_pos
-                f.seek(self.pre_pos, os.SEEK_SET)
-                new_content += [f.read(read_cnt).decode('utf8')]
-                self.pre_pos = cur_pos
-
-        if self.file_path.rfind('qemu.log') != -1 and penv['watch_qemu_log']:
-            if new_content:
-                filter_set = penv['filter_set']
-                new_content, tmp0 = [], []
+        if self.file_path.rfind('qemu.log') != -1:
+            if penv['watch_qemu_log'] or new_content:
+                new_content, tmp0, filter_set = [], [], set()
                 with open(self.file_path) as f:
                     for i in f.readlines():
                         tmp0 += [i[:-2]]
@@ -103,6 +90,17 @@ class FileChangeHandler(FileSystemEventHandler):
                             new_content += [f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}] {tmp1}"]
                             filter_set.add(tmp2)
                 self.__rst_watch_file()
+        else:
+            with open(self.file_path, 'rb') as f:
+                f.seek(0, os.SEEK_END)
+                cur_pos = f.tell()
+                if cur_pos <= self.pre_pos:
+                    self.__rst_watch_file()
+                if cur_pos > 0:
+                    read_cnt = cur_pos - self.pre_pos
+                    f.seek(self.pre_pos, os.SEEK_SET)
+                    new_content += [f.read(read_cnt).decode('utf8')]
+                    self.pre_pos = cur_pos
         return new_content
 
     def __is_self_event(self, event):
@@ -134,6 +132,8 @@ def main():
                 print(f"touched [{fn}] successfully")
         event_handler = FileChangeHandler(fn)
         observer.schedule(event_handler, os.path.abspath(fn), recursive=False)
+
+    rcc.delete(penv['emit_key'])
     observer.start()
     print(f"watch beginning=> {penv['watch_file']}")
 
@@ -156,7 +156,6 @@ def main():
     finally:
         observer.stop()
         observer.join()
-        rcc.delete(penv['emit_key'])
         rcc.save()
         rcc.close()
         rcp.disconnect(inuse_connections=True)

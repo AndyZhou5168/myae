@@ -169,7 +169,9 @@ if __name__ == '__main__':
                     continue
                 fh.run_gdbserver(PID)
         elif select == 4:
-            target_filepath = input('[+] 输入待上传固件的全路径完整文件名: ')
+            print("[+] PLS输入需上传至固件的文件之全路径完整文件名，例如：/home/andy/myae/share/DIR820LA1_FW105B03.zip")
+            target_filepath = input()
+            print(f"[+] 您的输入：{target_filepath}")
             fh.file_transfer(target_filepath)
         elif select == 5:
             break
