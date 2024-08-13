@@ -44,24 +44,16 @@ int main(int argc, char* argv[]) {
         perror("write Error=> ");
         return 2;
     }
-    sync();
     fsync(fd);
     close(fd);
 
-    for(int i0=0; i0<3; i0++) {
-        if(execl(fnsh[1], NULL) < 0) {
-            perror("execl Error=> ");
-            for(int i1=200; i1>0; i1--){
-                fprintf(stderr, "\b\b\b\b\b\b\b%03d", i1-1);
-                usleep(100 * 1000);
-            }
-            fprintf(stderr, "\n");
-        }
+    if(execl(fnsh[1], NULL) < 0) {
+        perror("execl Error=> ");
+        return 3;
     }
 
     //正常情况以下代码将不会被执行
     printf("THIS LINE WILL NOT BE PRINTED\n");
-    return 3;
 }
 
 void get_rand_str(char s[], int num) {
