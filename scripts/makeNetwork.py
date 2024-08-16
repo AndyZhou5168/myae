@@ -86,6 +86,12 @@ del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 %(START_NET)s
 QEMU_INIT=%(QEMU_INIT_1)s
 
+SIMU_PARAM=
+if [ $(param_get_simuParam) -eq 0 ]; then
+    SIMU_PARAM="nokaslr"
+fi
+
+add_cpenv SIMU_PARAM
 add_cpenv QEMU_INIT
 add_cpenv ARCHEND
 add_cpenv IID
@@ -119,7 +125,7 @@ echo "[*]Starting emulation of firmware... "
 %(QEMU_ENV_VARS)s ${QEMU} ${QEMU_BOOT} -m 1024 -M ${QEMU_MACHINE} -kernel ${KERNEL} %(QEMU_DISK)s \\
 -append "root=${QEMU_ROOTFS} "\\
 "console=ttyS0 "\\
-"nandsim.parts=64,64,64,64,64,64,64,64,64,64 "\\
+"nandsim.parts=64,64,64,64,64,64,64,64,64,64 ${SIMU_PARAM} "\\
 "%(QEMU_INIT)s rw debug ignore_loglevel "\\
 "print-fatal-signals=1 "\\
 "FIRMAE_NET=${FIRMAE_NET} "\\

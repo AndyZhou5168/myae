@@ -77,7 +77,7 @@ set +x
 cd /opt/myae
 source ./myae.config
 base_params_init
-echo -e "基准参数=> $FIRMAE_BOOT, $FIRMAE_NET, $FIRMAE_NVRAM, $FIRMAE_KERNEL, $FIRMAE_ETC, $MYAE_ASLR, $TIMEOUT, $CHECK_TIMEOUT"
+echo -e "基准参数=> $FIRMAE_BOOT, $FIRMAE_NET, $FIRMAE_NVRAM, $FIRMAE_KERNEL, $FIRMAE_ETC, $MYAE_ASLR, $TIMEOUT, $CHECK_TIMEOUT ^_^ $SIMU_LOSTFILE, $SIMU_STDIO"
 
 if [ $# -ne 3 ]; then
     #print_usage ${0}
@@ -187,7 +187,7 @@ function run_emulation() {
         echo -e "[\033[31m-\033[0m] extractor.py failed!"
         return
     fi
-    reg_engine_toweb "$IID@$$"
+    reg_engine_toweb "$IID@$PPID"
 
     # ================================
     # extract kernel from firmware

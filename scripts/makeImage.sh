@@ -100,7 +100,7 @@ fi
 
 echo "----Patching Filesystem (chroot)----"
 cp "${SCRIPT_DIR}/fixImage.sh" "${IMAGE_DIR}"
-FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
+FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} SIMU_LOSTFILE=$(param_get_simuLostfile) chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
 rm "${IMAGE_DIR}/fixImage.sh"
 rm "${IMAGE_DIR}/busybox"
 

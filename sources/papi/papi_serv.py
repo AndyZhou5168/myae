@@ -38,6 +38,176 @@ def log_response(response):
     return response
 
 
+@app.route(penv['url_prefix']+'simu/network/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_network():
+    """
+        【网络功能模拟】
+        操纵pNET参数处理
+    """
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        ok, simuNet = __action_simu_check('simuNet')
+        if not ok:
+            return make_response(simuNet, 200)
+
+        simuNet = "true" if simuNet == 1 else "false"
+        penv['rc'][0].hset('myae-params', 'pNET', simuNet)
+        return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+@app.route(penv['url_prefix']+'simu/peri/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_peri():
+    """
+        【设备外设模拟】
+        操纵pNVRAM参数处理
+    """
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        ok, simuPeri = __action_simu_check('simuPeri')
+        if not ok:
+            return make_response(simuPeri, 200)
+
+        simuPeri = "true" if simuPeri == 1 else "false"
+        penv['rc'][0].hset('myae-params', 'pNVRAM', simuPeri)
+        return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+@app.route(penv['url_prefix']+'simu/param/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_param():
+    """
+        【缺失参数模拟】
+        操纵pASLR参数处理
+    """
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        ok, simuParam = __action_simu_check('simuParam')
+        if not ok:
+            return make_response(simuParam, 200)
+
+        penv['rc'][0].hset('myae-params', 'pASLR', simuParam)
+        return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+@app.route(penv['url_prefix']+'simu/lostfile/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_lostfile():
+    """
+        【缺失系统文件模拟】
+        操纵868固件中缺失的/etc/hosts文件处理
+    """
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        ok, simuLostfile = __action_simu_check('simuLostfile')
+        if not ok:
+            return make_response(simuLostfile, 200)
+
+        penv['rc'][0].hset('myae-params', 'simuLostfile', simuLostfile)
+        return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+@app.route(penv['url_prefix']+'simu/stdio/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_stdio():
+    """
+        【标准输入输出模拟】
+        操纵QEMU的stdio参数处理
+    """
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        ok, simuStdio = __action_simu_check('simuStdio')
+        if not ok:
+            return make_response(simuStdio, 200)
+
+        penv['rc'][0].hset('myae-params', 'simuStdio', simuStdio)
+        return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+@app.route(penv['url_prefix']+'simu/desc/', methods=['POST', 'GET'])
+@Util.time_me()
+def action_simu_desc():
+    """场景模拟接口说明"""
+    if penv['apirunning']:
+        return make_response(jsonify({'code': 1003, 'data': '', 'msg': '接口执行中',}), 200)
+    penv['apirunning'] = True
+
+    try:
+        data = """
+            （1）模拟场景的参数：
+                    需整型 或 字符串；
+                    取值0 或 1；
+                    1-打开模拟、0-关闭模拟；
+            （2）各模拟场景使用参数：
+                    网络功能模拟(320)：    simuNet；
+                    设备外设模拟(868)：    simuPeri；
+                    缺失参数模拟(320)：    simuParam；
+                    缺失系统文件模拟(320)：simuLostfile；
+                    标准输入输出模拟(320)：simuStdio；
+            （3）每种模拟场景操作时执行的次序：
+                    停止引擎-->清理引擎-->所有模拟开关置1；
+                    该场景模拟开关置0-->运行引擎-->观察结果：
+                        超过耗时最大经验阈值 或 程序中途退出；
+                    ****************************************
+                    停止引擎-->清理引擎-->所有模拟开关置1；
+                    该场景模拟开关置1(可省略)-->运行引擎-->观察结果；
+                        一般在耗时最大经验阈值内运行成功；
+            （4）目前3个标靶固件模拟概述：
+                    4C/4GB资源，最大耗时(单位：分钟)累次观察众数值：
+                        320(10) < 868(15) < 820(25)；
+                    标320的场景，一般意味着对868、820也适用；
+                    演示时，一般以标注的固件为优先；
+            （5）所有场景模拟完成-->所有模拟开关置1；
+        """.replace('\\n', '\n')
+        return make_response(jsonify({'code': 1, 'data': data, 'msg': 'ok',}), 200)
+    finally:
+        penv['apirunning'] = False
+
+
+def __action_simu_check(pname):
+    tmp = request.form.get(pname, None)
+
+    if tmp is None:
+        return False, jsonify({'code': 1001, 'data': '', 'msg': f'{pname}字段缺失',})
+
+    if not isinstance(tmp, int):
+        if isinstance(tmp, str) and tmp.isdigit():
+            tmp = int(tmp)
+    if not isinstance(tmp, int):
+        return False, jsonify({'code': 1001, 'data': '', 'msg': f'{pname}字段要求整型或字符串型',})
+
+    if tmp not in [0, 1]:
+        return False, jsonify({'code': 1001, 'data': '', 'msg': f'{pname}字段取值要求0或1',})
+
+    return True, tmp
+
+
 @app.route(penv['url_prefix']+'params/desc/', methods=['POST', 'GET'])
 @Util.time_me()
 def action_query_param1():
@@ -287,13 +457,13 @@ def action_del():
     try:
         firm_name = request.form.get('firm_name', None)
         if firm_name:
-            return action_del_impl(firm_name)
+            return __action_del_impl(firm_name)
         else:
             for root, dirs, files in os.walk(penv['work_dir'], topdown=True, onerror=None, followlinks=False):
                 for i in files:
                     if i == 'README.md':
                         continue
-                    action_del_impl2(i, Util.gen_md5(i.encode('utf8')))
+                    __action_del_impl2(i, Util.gen_md5(i.encode('utf8')))
                 break
         return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
     finally:
@@ -301,7 +471,7 @@ def action_del():
         penv['apirunning'] = False
 
 
-def action_del_impl(firm_name):
+def __action_del_impl(firm_name):
     if not isinstance(firm_name, str):
         return make_response(jsonify({'code': 1001, 'data': '', 'msg': 'firm_name字段非法',}), 200)
 
@@ -313,11 +483,11 @@ def action_del_impl(firm_name):
     if not penv['rc'][0].exists(firm_md5):
         return make_response(jsonify({'code': 1001, 'data': '', 'msg': '该固件MD5不存在',}), 200)
 
-    action_del_impl2(firm_name, firm_md5)
+    __action_del_impl2(firm_name, firm_md5)
     return make_response(jsonify({'code': 1, 'data': '', 'msg': 'ok',}), 200)
 
 
-def action_del_impl2(firm_name, firm_md5):
+def __action_del_impl2(firm_name, firm_md5):
     rc = penv['rc'][0]
     rc.delete(firm_md5)
     rc.srem(penv['firmwares'], firm_md5)
@@ -401,6 +571,7 @@ def action_stop():
 
         iid, processid = penv['processid'].split('@')
         mycmd(r'echo -e "\nq\n" | sudo /usr/bin/nc -U /tmp/qemu.{0}'.format(iid))
+        mycmd(r'sudo kill -TERM -{0}'.format(processid))
         print("引擎停止，进程ID【{0}】\n".format(processid))
         penv['processid'] = None
         return make_response(jsonify({'code': 1, 'data': str(processid), 'msg': 'ok',}), 200)

@@ -32,6 +32,15 @@ else
 fi
 add_cpenv QEMU_NETWORK
 
+SIMU_STDIO1="-serial file:${WORK_DIR}/qemu.initial.serial.log"
+SIMU_STDIO2="-serial unix:/tmp/qemu.${IID}.S1,server,nowait"
+if [ $(param_get_simuStdio) -eq 0 ]; then
+    SIMU_STDIO2="-serial null -parallel null"
+    SIMU_STDIO1=
+fi
+add_cpenv SIMU_STDIO2
+add_cpenv SIMU_STDIO1
+
 print_cpenv
 QEMU_AUDIO_DRV=none qemu-system-arm -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} \
 -drive if=none,file=${IMAGE},format=raw,id=rootfs \
@@ -47,8 +56,8 @@ QEMU_AUDIO_DRV=none qemu-system-arm -m 256 -M ${QEMU_MACHINE} -kernel ${KERNEL} 
 "FIRMAE_KERNEL=${FIRMAE_KERNEL} "\
 "FIRMAE_ETC=${FIRMAE_ETC} "\
 "user_debug=31" \
--serial file:${WORK_DIR}/qemu.initial.serial.log \
--serial unix:/tmp/qemu.${IID}.S1,server,nowait \
+${SIMU_STDIO1} \
+${SIMU_STDIO2} \
 -monitor unix:/tmp/qemu.${IID},server,nowait \
 -d unimp,guest_errors \
 -rtc base=localtime,clock=host \

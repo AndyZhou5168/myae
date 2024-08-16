@@ -20,12 +20,6 @@ source ./myae.config
 MYAE_SCRATCH="$MYAEP1PREFIX/data/myae_scratch"
 MYAE_IMAGES="$MYAEP1PREFIX/data/myae_images"
 MYAE_BINARYS="$MYAEP1PREFIX/binaries"
-
-if [ -e "$MYAE_SCRATCH" ]; then
-    for i in `myls ${MYAE_SCRATCH}`; do
-        echo -e "clean proj=> $i..."
-    done
-fi
 cd $cur_dir
 
 if [ -d "$MYAE_SCRATCH" ]; then
@@ -50,6 +44,20 @@ done
 
 rm -fr "$MYAE_SCRATCH" "$MYAE_IMAGES" "$MYAE_BINARYS"
 sleep 2
+
+cur_dir=$(pwd)
+MYAE_SCRATCH="$MYAEP2PREFIX/scratch"
+cd $MYAEP2PREFIX
+if [ -e "$MYAE_SCRATCH" ]; then
+    for i in `myls "$MYAE_SCRATCH"`; do
+        echo -e "clean proj=> $i..."
+        ./scripts/delete.sh $i
+    done
+fi
+cd $cur_dir
 rm -fr "$MYAEP2PREFIX/scratch" "$MYAEP2PREFIX/images"
 
-#supervisorctl clear all
+redis-cli -p $REDIS_PORT hset "myae-params" \
+    pBOOT true pNET true pNVRAM true pKERNEL true pETC true \
+    pASLR 1 pTM1 240  pCTM1 360 pTM2 60  pCTM2 60 \
+    simuLostfile 1 simuStdio 1 > /dev/null
