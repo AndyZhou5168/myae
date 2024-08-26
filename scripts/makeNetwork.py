@@ -129,7 +129,7 @@ echo "[*]Starting emulation of firmware... "
 "%(QEMU_INIT)s rw debug ignore_loglevel "\\
 "print-fatal-signals=1 "\\
 "FIRMAE_NET=${FIRMAE_NET} "\\
-"FIRMAE_NVRAM=${FIRMAE_NVRAM} "\\
+"FIRMAE_NVRAM=$(param_get_simuPeri) "\\
 "FIRMAE_KERNEL=${FIRMAE_KERNEL} "\\
 "FIRMAE_ETC=${FIRMAE_ETC} "\\
 "${QEMU_DEBUG}" \\

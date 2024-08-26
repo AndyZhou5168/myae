@@ -77,7 +77,7 @@ echo "----Creating FIRMADYNE Directories----"
 mkdir "${IMAGE_DIR}/firmadyne/"
 mkdir "${IMAGE_DIR}/firmadyne/libnvram/"
 mkdir "${IMAGE_DIR}/firmadyne/libnvram.override/"
-mkdir "${IMAGE_DIR}/opt/"
+mkdir -p "${IMAGE_DIR}/opt/"
 
 cp $(which busybox) "${IMAGE_DIR}"
 cp $(which bash-static) "${IMAGE_DIR}"
@@ -100,7 +100,7 @@ fi
 
 echo "----Patching Filesystem (chroot)----"
 cp "${SCRIPT_DIR}/fixImage.sh" "${IMAGE_DIR}"
-FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} SIMU_LOSTFILE=$(param_get_simuLostfile) chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
+FIRMAE_BOOT=${FIRMAE_BOOT} FIRMAE_ETC=${FIRMAE_ETC} SIMU_LOSTFILE=$(param_get_simuLostfile) MYAE_NVRAM=$(param_get_simuPeri) chroot "${IMAGE_DIR}" /busybox ash /fixImage.sh
 rm "${IMAGE_DIR}/fixImage.sh"
 rm "${IMAGE_DIR}/busybox"
 

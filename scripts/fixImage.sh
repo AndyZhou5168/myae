@@ -10,17 +10,20 @@ resolve_link() {
     echo "$TARGET"
 }
 
-if [ ${SIMU_LOSTFILE} -eq 1 ]; then
-    echo -e "环境变量【SIMU_LOSTFILE】 => $SIMU_LOSTFILE"
+echo -e "环境变量【SIMU_LOSTFILE】 => $SIMU_LOSTFILE"
+echo -e "环境变量【MYAE_NVRAM】 => $MYAE_NVRAM"
 
+if [ ${SIMU_LOSTFILE} -eq 1 ]; then
     if (${FIRMAE_BOOT}); then
         if [ ! -e /bin/sh ]; then
             ${BUSYBOX} ln -s /firmadyne/busybox /bin/sh
         fi
         ${BUSYBOX} ln -s /firmadyne/busybox /firmadyne/sh
 
+        if (${MYAE_NVRAM}); then
+            mkdir -p "$(resolve_link /dev/pts)"
+        fi
         mkdir -p "$(resolve_link /proc)"
-        mkdir -p "$(resolve_link /dev/pts)"
         mkdir -p "$(resolve_link /etc_ro)"
         mkdir -p "$(resolve_link /tmp)"
         mkdir -p "$(resolve_link /var)"
@@ -80,95 +83,96 @@ if [ ${SIMU_LOSTFILE} -eq 1 ]; then
         else
             TMP_BUSYBOX=""
         fi
+        if (${MYAE_NVRAM}); then
+            ${TMP_BUSYBOX} mknod -m 660 /dev/mem c 1 1
+            ${TMP_BUSYBOX} mknod -m 640 /dev/kmem c 1 2
+            ${TMP_BUSYBOX} mknod -m 666 /dev/null c 1 3
+            ${TMP_BUSYBOX} mknod -m 666 /dev/zero c 1 5
+            ${TMP_BUSYBOX} mknod -m 444 /dev/random c 1 8
+            ${TMP_BUSYBOX} mknod -m 444 /dev/urandom c 1 9
+            ${TMP_BUSYBOX} mknod -m 666 /dev/armem c 1 13
 
-        ${TMP_BUSYBOX} mknod -m 660 /dev/mem c 1 1
-        ${TMP_BUSYBOX} mknod -m 640 /dev/kmem c 1 2
-        ${TMP_BUSYBOX} mknod -m 666 /dev/null c 1 3
-        ${TMP_BUSYBOX} mknod -m 666 /dev/zero c 1 5
-        ${TMP_BUSYBOX} mknod -m 444 /dev/random c 1 8
-        ${TMP_BUSYBOX} mknod -m 444 /dev/urandom c 1 9
-        ${TMP_BUSYBOX} mknod -m 666 /dev/armem c 1 13
+            ${TMP_BUSYBOX} mknod -m 666 /dev/tty c 5 0
+            ${TMP_BUSYBOX} mknod -m 622 /dev/console c 5 1
+            ${TMP_BUSYBOX} mknod -m 666 /dev/ptmx c 5 2
 
-        ${TMP_BUSYBOX} mknod -m 666 /dev/tty c 5 0
-        ${TMP_BUSYBOX} mknod -m 622 /dev/console c 5 1
-        ${TMP_BUSYBOX} mknod -m 666 /dev/ptmx c 5 2
+            ${TMP_BUSYBOX} mknod -m 622 /dev/tty0 c 4 0
+            ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS0 c 4 64
+            ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS1 c 4 65
+            ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS2 c 4 66
+            ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS3 c 4 67
 
-        ${TMP_BUSYBOX} mknod -m 622 /dev/tty0 c 4 0
-        ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS0 c 4 64
-        ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS1 c 4 65
-        ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS2 c 4 66
-        ${TMP_BUSYBOX} mknod -m 660 /dev/ttyS3 c 4 67
+            ${TMP_BUSYBOX} mknod -m 644 /dev/adsl0 c 100 0
+            ${TMP_BUSYBOX} mknod -m 644 /dev/ppp c 108 0
+            ${TMP_BUSYBOX} mknod -m 666 /dev/hidraw0 c 251 0
 
-        ${TMP_BUSYBOX} mknod -m 644 /dev/adsl0 c 100 0
-        ${TMP_BUSYBOX} mknod -m 644 /dev/ppp c 108 0
-        ${TMP_BUSYBOX} mknod -m 666 /dev/hidraw0 c 251 0
+            mkdir -p /dev/mtd
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/0 c 90 0
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/1 c 90 2
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/2 c 90 4
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/3 c 90 6
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/4 c 90 8
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/5 c 90 10
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/6 c 90 12
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/7 c 90 14
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/8 c 90 16
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/9 c 90 18
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/10 c 90 20
 
-        mkdir -p /dev/mtd
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/0 c 90 0
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/1 c 90 2
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/2 c 90 4
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/3 c 90 6
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/4 c 90 8
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/5 c 90 10
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/6 c 90 12
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/7 c 90 14
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/8 c 90 16
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/9 c 90 18
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd/10 c 90 20
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd0 c 90 0
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr0 c 90 1
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd1 c 90 2
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr1 c 90 3
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd2 c 90 4
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr2 c 90 5
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd3 c 90 6
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr3 c 90 7
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd4 c 90 8
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr4 c 90 9
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd5 c 90 10
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr5 c 90 11
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd6 c 90 12
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr6 c 90 13
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd7 c 90 14
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr7 c 90 15
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd8 c 90 16
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr8 c 90 17
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd9 c 90 18
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr9 c 90 19
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtd10 c 90 20
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr10 c 90 21
 
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd0 c 90 0
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr0 c 90 1
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd1 c 90 2
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr1 c 90 3
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd2 c 90 4
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr2 c 90 5
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd3 c 90 6
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr3 c 90 7
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd4 c 90 8
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr4 c 90 9
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd5 c 90 10
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr5 c 90 11
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd6 c 90 12
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr6 c 90 13
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd7 c 90 14
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr7 c 90 15
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd8 c 90 16
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr8 c 90 17
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd9 c 90 18
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr9 c 90 19
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtd10 c 90 20
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdr10 c 90 21
+            mkdir -p /dev/mtdblock
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/0 b 31 0
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/1 b 31 1
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/2 b 31 2
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/3 b 31 3
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/4 b 31 4
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/5 b 31 5
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/6 b 31 6
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/7 b 31 7
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/8 b 31 8
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/9 b 31 9
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/10 b 31 10
 
-        mkdir -p /dev/mtdblock
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/0 b 31 0
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/1 b 31 1
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/2 b 31 2
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/3 b 31 3
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/4 b 31 4
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/5 b 31 5
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/6 b 31 6
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/7 b 31 7
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/8 b 31 8
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/9 b 31 9
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock/10 b 31 10
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock0 b 31 0
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock1 b 31 1
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock2 b 31 2
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock3 b 31 3
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock4 b 31 4
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock5 b 31 5
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock6 b 31 6
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock7 b 31 7
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock8 b 31 8
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock9 b 31 9
+            ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock10 b 31 10
 
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock0 b 31 0
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock1 b 31 1
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock2 b 31 2
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock3 b 31 3
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock4 b 31 4
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock5 b 31 5
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock6 b 31 6
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock7 b 31 7
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock8 b 31 8
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock9 b 31 9
-        ${TMP_BUSYBOX} mknod -m 644 /dev/mtdblock10 b 31 10
-
-        mkdir -p /dev/tts
-        ${TMP_BUSYBOX} mknod -m 660 /dev/tts/0 c 4 64
-        ${TMP_BUSYBOX} mknod -m 660 /dev/tts/1 c 4 65
-        ${TMP_BUSYBOX} mknod -m 660 /dev/tts/2 c 4 66
-        ${TMP_BUSYBOX} mknod -m 660 /dev/tts/3 c 4 67
+            mkdir -p /dev/tts
+            ${TMP_BUSYBOX} mknod -m 660 /dev/tts/0 c 4 64
+            ${TMP_BUSYBOX} mknod -m 660 /dev/tts/1 c 4 65
+            ${TMP_BUSYBOX} mknod -m 660 /dev/tts/2 c 4 66
+            ${TMP_BUSYBOX} mknod -m 660 /dev/tts/3 c 4 67
+        fi
     fi
 
     # create a gpio file required for linksys to make the watchdog happy
@@ -179,8 +183,10 @@ if [ ${SIMU_LOSTFILE} -eq 1 ]; then
             if (${FIRMAE_BOOT}); then
                 rm /dev/gpio
             fi
-            mkdir -p /dev/gpio
-            echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
+            if (${MYAE_NVRAM}); then
+                mkdir -p /dev/gpio
+                echo -ne "\xff\xff\xff\xff" > /dev/gpio/in
+            fi
     fi
 
     # prevent system from rebooting

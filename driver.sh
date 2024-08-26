@@ -39,16 +39,17 @@ function select_mode() {
     for i in $(seq 1 $tmp); do
         echo -e "\t[ $i ] ${FIRMWARE_LIST[i]}"
     done
+
     echo -e "PLS选择相应的序号"
     typeset -u U_FIRM_SELECT
     read -t 300 -p "您的" U_FIRM_SELECT
-    if [[ "$U_FIRM_SELECT" =~ ^[1-$tmp]$ ]]; then
+    if [ $(( ${U_FIRM_SELECT} )) -lt 1 ] || [ $(( ${U_FIRM_SELECT} )) -gt $tmp ]; then
+        echo "无效输入，程序退出"
+        exit 1
+    else
         FIRM_SELECT=$U_FIRM_SELECT
         FIRM_SELECT=${FIRMWARE_LIST[$FIRM_SELECT]}
         echo "选择的固件=> $FIRM_SELECT"
-    else
-        echo "无效输入，程序退出"
-        exit 1
     fi
 
     echo -e "\n目前支持的模式列表："
