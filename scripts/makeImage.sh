@@ -130,6 +130,11 @@ chmod a+x "${IMAGE_DIR}/bin/a"
 touch "${IMAGE_DIR}/firmadyne/debug.sh"
 chmod a+x "${IMAGE_DIR}/firmadyne/debug.sh"
 
+touch "${IMAGE_DIR}/firmadyne/target_program"
+chmod 777 "${IMAGE_DIR}/firmadyne/target_program"
+cp "/opt/myae/addr_agent.mipsel" "${IMAGE_DIR}/firmadyne/addr_agent"
+chmod a+x "${IMAGE_DIR}/firmadyne/addr_agent"
+
 if (! ${FIRMAE_ETC}); then
     sed -i 's/sleep 60/sleep 15/g' "${IMAGE_DIR}/firmadyne/network.sh"
     sed -i 's/sleep 120/sleep 30/g' "${IMAGE_DIR}/firmadyne/run_service.sh"
